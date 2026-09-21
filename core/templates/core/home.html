@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Codimente Private AI</title>
+
+    <link rel="stylesheet"
+          href="{% static 'core/css/style.css' %}">
+</head>
+
+<body>
+
+    <main class="hero">
+	
+	    <img
+			src="{% static 'core/images/codimente-logo.png' %}"
+			alt="Codimente Systems"
+			class="logo"
+		>
+>
+
+        <div class="badge">
+            CODIMENTE SYSTEMS
+        </div>
+
+        <h1>
+            CODIMENTE
+            <span>PRIVATE AI</span>
+        </h1>
+
+        <p class="tagline">
+            Your Data. Your Infrastructure. Your AI.
+        </p>
+
+        <p class="description">
+            Secure organisational intelligence powered by
+            your knowledge, documents and business systems.
+        </p>
+
+        <div class="actions">
+            <a href="{% url 'chat' %}" class="primary button-link">
+				Ask Codimente AI
+			</a>
+
+            <button class="secondary">
+                Explore Private AI
+            </button>
+        </div>
+
+        <div class="privacy">
+            Private • Secure • Organisation Controlled
+        </div>
+
+    </main>
+
+</body>
+</html>

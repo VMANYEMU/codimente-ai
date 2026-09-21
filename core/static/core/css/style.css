@@ -1,0 +1,529 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+        radial-gradient(circle at top right, #123b75, #06152c 55%);
+    color: white;
+}
+
+.hero {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.badge {
+    color: #4da3ff;
+    font-weight: bold;
+    letter-spacing: 4px;
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    margin: 0;
+    letter-spacing: 2px;
+}
+
+h1 span {
+    display: block;
+    color: #168cff;
+}
+
+.tagline {
+    font-size: 1.6rem;
+    margin-top: 25px;
+}
+
+.description {
+    max-width: 700px;
+    color: #b9c9dc;
+    font-size: 1.1rem;
+    line-height: 1.7;
+}
+
+.actions {
+    margin-top: 35px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+button {
+    padding: 15px 28px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.primary {
+    border: none;
+    background: #168cff;
+    color: white;
+}
+
+.secondary {
+    border: 1px solid #54779f;
+    background: transparent;
+    color: white;
+}
+
+.privacy {
+    margin-top: 45px;
+    color: #7694b5;
+    font-size: 0.9rem;
+}
+.logo {
+    width: 180px;
+    max-width: 70%;
+    margin-bottom: 30px;
+}
+.button-link {
+    text-decoration: none;
+    display: inline-block;
+}
+.chat-body {
+    margin: 0;
+    background: #071426;
+    color: white;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.chat-layout {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 270px;
+    background: #09182c;
+    border-right: 1px solid #1c304b;
+    padding: 25px 18px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-logo {
+    width: 150px;
+    margin: 0 auto 30px;
+}
+
+.new-chat {
+    background: #168cff;
+    color: white;
+    border: none;
+    width: 100%;
+}
+
+.assistant-section {
+    margin-top: 30px;
+}
+
+.section-label {
+    color: #6d89a9;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    padding-left: 12px;
+}
+
+.assistant {
+    padding: 13px;
+    border-radius: 7px;
+    color: #9fb2c8;
+    margin-bottom: 4px;
+    cursor: pointer;
+}
+
+.assistant:hover,
+.assistant.active {
+    background: #122844;
+    color: white;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    color: #7289a4;
+    font-size: 0.8rem;
+    padding: 12px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #2ed47a;
+    border-radius: 50%;
+    margin-right: 7px;
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    height: 70px;
+    border-bottom: 1px solid #1c304b;
+    padding: 0 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chat-header span {
+    color: #6f8baa;
+    margin-left: 12px;
+    font-size: 0.85rem;
+}
+
+.private-badge {
+    color: #59aaff;
+    border: 1px solid #275989;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+}
+
+.conversation {
+    flex: 1;
+    overflow-y: auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 40px;
+}
+
+.welcome {
+    max-width: 650px;
+    text-align: center;
+}
+
+.ai-icon {
+    width: 60px;
+    height: 60px;
+    margin: auto;
+
+    background: #168cff;
+    border-radius: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 1.7rem;
+    font-weight: bold;
+}
+
+.welcome h1 {
+    font-size: 2.5rem;
+    margin-top: 25px;
+}
+
+.welcome p {
+    color: #91a6bd;
+    line-height: 1.6;
+}
+
+.suggestions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+.suggestions button {
+    background: #0d1d33;
+    color: #afc1d5;
+    border: 1px solid #213955;
+    font-size: 0.85rem;
+}
+
+.composer {
+    width: min(850px, 90%);
+    margin: 0 auto 20px;
+}
+
+.input-wrapper {
+    background: #10223a;
+    border: 1px solid #29425f;
+    border-radius: 15px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 10px;
+}
+
+textarea {
+    flex: 1;
+
+    background: transparent;
+    border: none;
+    outline: none;
+
+    color: white;
+
+    resize: none;
+
+    padding: 12px;
+
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+#sendButton {
+    background: #168cff;
+    color: white;
+    border: none;
+
+    width: 45px;
+    height: 45px;
+
+    padding: 0;
+}
+
+.disclaimer {
+    text-align: center;
+    color: #566f8c;
+    font-size: 0.72rem;
+}
+.message {
+    max-width: 750px;
+    width: fit-content;
+
+    padding: 16px 20px;
+    margin: 12px auto;
+
+    border-radius: 14px;
+
+    line-height: 1.6;
+}
+
+.user-message {
+    background: #168cff;
+
+    margin-left: auto;
+    margin-right: 5%;
+
+    max-width: 65%;
+}
+
+.ai-message {
+    background: #10223a;
+
+    border: 1px solid #213955;
+
+    margin-left: 5%;
+    margin-right: auto;
+
+    max-width: 75%;
+}
+
+.conversation {
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.welcome {
+    margin: auto;
+}
+.assistant {
+    display: block;
+    text-decoration: none;
+}
+
+/* ==========================================
+   CODIMENTE AI ANSWER FORMATTING
+   ========================================== */
+
+.ai-answer-content {
+    line-height: 1.7;
+    font-size: 15px;
+}
+
+.ai-answer-content p {
+    margin: 0 0 14px 0;
+}
+
+.ai-answer-content p:last-child {
+    margin-bottom: 0;
+}
+
+.ai-answer-content strong {
+    font-weight: 700;
+}
+
+.ai-answer-content h1,
+.ai-answer-content h2,
+.ai-answer-content h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.ai-answer-content h1 {
+    font-size: 22px;
+}
+
+.ai-answer-content h2 {
+    font-size: 19px;
+}
+
+.ai-answer-content h3 {
+    font-size: 17px;
+}
+
+.ai-answer-content ul,
+.ai-answer-content ol {
+    margin: 10px 0 14px 22px;
+}
+
+.ai-answer-content li {
+    margin-bottom: 6px;
+}
+
+.ai-answer-content blockquote {
+    margin: 14px 0;
+    padding: 10px 15px;
+    border-left: 3px solid currentColor;
+    opacity: 0.85;
+}
+
+.ai-answer-content code {
+    font-family: Consolas, monospace;
+    font-size: 14px;
+}
+
+.ai-answer-content pre {
+    overflow-x: auto;
+    padding: 14px;
+    border-radius: 8px;
+    margin: 14px 0;
+}
+
+
+/* ==========================================
+   SOURCE CARDS
+   ========================================== */
+
+.answer-sources {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.10);
+}
+
+.sources-heading {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    opacity: 0.65;
+}
+
+.source-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 11px 13px;
+    margin-top: 8px;
+
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.source-icon {
+    font-size: 19px;
+    flex-shrink: 0;
+}
+
+.source-details {
+    min-width: 0;
+}
+
+.source-title {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.source-meta {
+    font-size: 11px;
+    margin-top: 3px;
+    opacity: 0.65;
+}
+
+
+/* ==========================================
+   THINKING INDICATOR
+   ========================================== */
+
+.thinking-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.thinking-indicator span {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: currentColor;
+
+    opacity: 0.3;
+
+    animation:
+        codimenteThinking 1.4s infinite;
+}
+
+.thinking-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.thinking-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.thinking-indicator small {
+    margin-left: 7px;
+    opacity: 0.6;
+}
+
+
+@keyframes codimenteThinking {
+
+    0%,
+    60%,
+    100% {
+        opacity: 0.25;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
