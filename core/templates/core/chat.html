@@ -242,7 +242,7 @@ function renderSources(element, sources) {
         const pageText =
             source.page
                 ? `Page ${source.page}`
-                : "Organisational knowledge";
+                : (source.knowledge_base || "Organisational Knowledge");
 
         card.innerHTML = `
             <div class="source-icon">
@@ -675,9 +675,9 @@ function renderSources(element, sources) {
             "source-card";
 
         const pageText =
-            source.page
-                ? `Page ${source.page}`
-                : "Organisational knowledge";
+			source.page
+				? `Page ${source.page}`
+				: (source.knowledge_base || "Organisational Knowledge");
 
         card.innerHTML = `
             <div class="source-icon">

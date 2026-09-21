@@ -9,26 +9,51 @@ from knowledge.services.embedding_service import EmbeddingService
 STOP_WORDS = {
     "the", "a", "an", "is", "are", "of", "to", "for",
     "and", "in", "on", "this", "that", "what", "how",
-    "can", "does", "do",
+    "can", "does", "do", "i", "my", "me",
 }
 
+MIN_HYBRID_SCORE = 0.25
 
 def tokenize(text):
     words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
+
     return {
-        word for word in words
+        word
+        for word in words
         if word not in STOP_WORDS
     }
 
 
+
+def calculate_keyword_score(query, content):
+    """
+    Return a simple lexical overlap score between 0 and 1.
+    """
+
+    query_words = tokenize(query)
+
+    if not query_words:
+        return 0.0
+
+    content_words = tokenize(content)
+
+    matches = query_words.intersection(content_words)
+
+    return len(matches) / len(query_words)
+
+
 def semantic_retrieve(assistant, query, limit=5):
     """
-    Retrieve document chunks using semantic similarity.
+    Retrieve candidate chunks using pgvector, then attach
+    semantic, keyword and hybrid scores.
     """
 
     query_embedding = EmbeddingService.embed_text(query)
 
-    return list(
+    # Retrieve more candidates than ultimately required.
+    candidate_limit = max(limit * 3, 10)
+
+    candidates = list(
         DocumentChunk.objects.filter(
             document__knowledge_base__assistant=assistant,
             document__is_processed=True,
@@ -44,14 +69,44 @@ def semantic_retrieve(assistant, query, limit=5):
                 query_embedding,
             )
         )
-        .order_by("distance")[:limit]
+        .order_by("distance")[:candidate_limit]
     )
+
+    for chunk in candidates:
+        semantic_score = 1 - float(chunk.distance)
+
+        keyword_score = calculate_keyword_score(
+            query,
+            chunk.content,
+        )
+
+        # Semantic meaning carries most of the weight.
+        hybrid_score = (
+            semantic_score * 0.75
+            + keyword_score * 0.25
+        )
+
+        chunk.similarity = semantic_score
+        chunk.keyword_score = keyword_score
+        chunk.hybrid_score = hybrid_score
+
+    candidates.sort(
+        key=lambda chunk: chunk.hybrid_score,
+        reverse=True,
+    )
+
+    relevant_candidates = [
+        chunk
+        for chunk in candidates
+        if chunk.hybrid_score >= MIN_HYBRID_SCORE
+    ]
+
+    return relevant_candidates[:limit]
 
 
 def keyword_retrieve(assistant, query, limit=5):
     """
-    Fallback keyword retrieval for chunks without embeddings
-    or if semantic retrieval fails.
+    Fallback retrieval if semantic retrieval is unavailable.
     """
 
     query_words = tokenize(query)
@@ -92,29 +147,27 @@ def keyword_retrieve(assistant, query, limit=5):
 
 def retrieve_knowledge(assistant, query, limit=5):
     """
-    Main retrieval entry point.
+    Main knowledge retrieval entry point.
 
-    Semantic retrieval is preferred.
-    Keyword retrieval remains available as a fallback.
+    Semantic/hybrid retrieval is authoritative when
+    embeddings are available. Keyword retrieval is used
+    only if semantic retrieval fails technically.
     """
 
     try:
-        semantic_results = semantic_retrieve(
+        return semantic_retrieve(
             assistant,
             query,
             limit,
         )
-
-        if semantic_results:
-            return semantic_results
 
     except Exception as exc:
         print(
             f"Semantic retrieval failed: {exc}"
         )
 
-    return keyword_retrieve(
-        assistant,
-        query,
-        limit,
-    )
+        return keyword_retrieve(
+            assistant,
+            query,
+            limit,
+        )

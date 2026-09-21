@@ -129,12 +129,18 @@ def chat_api(request):
                 "provider": "huggingface",
 
                 "sources": [
-                    {
-                        "title": chunk.document.title,
-                        "page": chunk.page_number,
-                    }
-                    for chunk in knowledge_chunks
-                ],
+                {
+                    "title": chunk.document.title,
+                    "page": chunk.page_number,
+                    "knowledge_base": chunk.document.knowledge_base.name,
+                    "chunk_index": chunk.chunk_index,
+                    "similarity": round(
+                        getattr(chunk, "similarity", 0),
+                        4,
+                    ),
+                }
+                for chunk in knowledge_chunks
+            ],
             }
         )
 

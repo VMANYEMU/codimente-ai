@@ -54,21 +54,59 @@ def extract_txt(file_path):
 
 def chunk_text(
     text,
-    chunk_size=1200,
-    overlap=200,
+    chunk_size=700,
+    overlap=100,
 ):
+    """
+    Split text into chunks while attempting to preserve
+    paragraph boundaries.
+    """
+
+    paragraphs = [
+        paragraph.strip()
+        for paragraph in text.split("\n")
+        if paragraph.strip()
+    ]
+
     chunks = []
-    start = 0
+    current_chunk = ""
 
-    while start < len(text):
-        end = start + chunk_size
+    for paragraph in paragraphs:
+        candidate = (
+            f"{current_chunk}\n{paragraph}".strip()
+            if current_chunk
+            else paragraph
+        )
 
-        chunk = text[start:end].strip()
+        if len(candidate) <= chunk_size:
+            current_chunk = candidate
+            continue
 
-        if chunk:
-            chunks.append(chunk)
+        if current_chunk:
+            chunks.append(current_chunk)
 
-        start += chunk_size - overlap
+        # Handle unusually long paragraphs.
+        if len(paragraph) > chunk_size:
+            start = 0
+
+            while start < len(paragraph):
+                end = start + chunk_size
+
+                piece = paragraph[
+                    start:end
+                ].strip()
+
+                if piece:
+                    chunks.append(piece)
+
+                start += chunk_size - overlap
+
+            current_chunk = ""
+        else:
+            current_chunk = paragraph
+
+    if current_chunk:
+        chunks.append(current_chunk)
 
     return chunks
 
