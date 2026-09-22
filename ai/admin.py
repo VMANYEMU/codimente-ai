@@ -1,6 +1,9 @@
 from django.contrib import admin
 
-from .models import Assistant
+from .models import (
+    Assistant,
+    AssistantAccess,
+)
 
 
 @admin.register(Assistant)
@@ -8,6 +11,7 @@ class AssistantAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "organisation",
+        "slug",
         "is_active",
     )
 
@@ -16,6 +20,26 @@ class AssistantAdmin(admin.ModelAdmin):
         "is_active",
     )
 
-    prepopulated_fields = {
-        "slug": ("name",)
-    }
+    search_fields = (
+        "name",
+        "slug",
+        "organisation__name",
+    )
+
+
+@admin.register(AssistantAccess)
+class AssistantAccessAdmin(admin.ModelAdmin):
+    list_display = (
+        "membership",
+        "assistant",
+        "created_at",
+    )
+
+    list_filter = (
+        "assistant",
+    )
+
+    search_fields = (
+        "membership__user__username",
+        "assistant__name",
+    )

@@ -435,6 +435,29 @@ messageInput.addEventListener(
 
 </script>
 
+<div class="sidebar-user">
+
+    <div>
+        Signed in as
+        <strong>{{ request.user.username }}</strong>
+    </div>
+
+    <form
+        method="post"
+        action="{% url 'logout' %}"
+    >
+        {% csrf_token %}
+
+        <button
+            type="submit"
+            class="logout-button"
+        >
+            Sign Out
+        </button>
+    </form>
+
+</div>
+
 </body>
 
 </html>{% load static %}

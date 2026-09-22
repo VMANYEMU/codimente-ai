@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from knowledge.services.retriever import retrieve_knowledge
-
+from core.models import OrganisationMembership
 from .models import Assistant
 from .providers.hosted_provider import HostedProvider
 
@@ -22,6 +22,35 @@ def chat_api(request):
         "assistant",
         "general"
     )
+    if not request.user.is_authenticated:
+        return Response(
+            {
+                "error": "Authentication is required."
+            },
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+
+    membership = (
+        OrganisationMembership.objects
+        .filter(
+            user=request.user,
+            is_active=True,
+        )
+        .select_related("organisation")
+        .first()
+    )
+
+    if membership is None:
+        return Response(
+            {
+                "error": (
+                    "No active organisation "
+                    "membership was found."
+                )
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     # Make sure a question was supplied
     if not message:
@@ -36,14 +65,21 @@ def chat_api(request):
 
         assistant = Assistant.objects.get(
             slug=assistant_slug,
+            organisation=membership.organisation,
             is_active=True,
+            access_permissions__membership=membership,
         )
 
     except Assistant.DoesNotExist:
 
         return Response(
-            {"error": "Assistant not found."},
-            status=status.HTTP_404_NOT_FOUND,
+            {
+                "error": (
+                    "You do not have access "
+                    "to this assistant."
+                )
+            },
+            status=status.HTTP_403_FORBIDDEN,
         )
 
     try:

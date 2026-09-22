@@ -2,7 +2,6 @@ from django.db import models
 
 from core.models import Organisation
 
-
 class Assistant(models.Model):
 
     organisation = models.ForeignKey(
@@ -32,3 +31,38 @@ class Assistant(models.Model):
 
     def __str__(self):
         return f"{self.organisation.name} - {self.name}"
+        
+       
+class AssistantAccess(models.Model):
+    membership = models.ForeignKey(
+        "core.OrganisationMembership",
+        on_delete=models.CASCADE,
+        related_name="assistant_access",
+    )
+
+    assistant = models.ForeignKey(
+        Assistant,
+        on_delete=models.CASCADE,
+        related_name="access_permissions",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "membership",
+                    "assistant",
+                ],
+                name="unique_assistant_access",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.membership.user.username} - "
+            f"{self.assistant.name}"
+        )
