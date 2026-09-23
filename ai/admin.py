@@ -3,6 +3,8 @@ from django.contrib import admin
 from .models import (
     Assistant,
     AssistantAccess,
+    Conversation,
+    Message,
 )
 
 
@@ -42,4 +44,58 @@ class AssistantAccessAdmin(admin.ModelAdmin):
     search_fields = (
         "membership__user__username",
         "assistant__name",
+    )
+
+@admin.register(Conversation)
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "user",
+        "organisation",
+        "assistant",
+        "created_at",
+        "updated_at",
+    )
+
+    list_filter = (
+        "organisation",
+        "assistant",
+        "created_at",
+    )
+
+    search_fields = (
+        "title",
+        "user__username",
+        "assistant__name",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "conversation",
+        "role",
+        "created_at",
+    )
+
+    list_filter = (
+        "role",
+        "created_at",
+    )
+
+    search_fields = (
+        "conversation__title",
+        "conversation__user__username",
+        "content",
+    )
+
+    readonly_fields = (
+        "created_at",
     )

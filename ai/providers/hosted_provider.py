@@ -13,7 +13,7 @@ class HostedProvider(ModelProvider):
 
         self.model = os.getenv(
             "AI_MODEL",
-            "openai/gpt-oss-120b:cerebras"
+            "openai/gpt-oss-120b:cerebras",
         )
 
         if not self.token:
@@ -22,15 +22,17 @@ class HostedProvider(ModelProvider):
             )
 
         self.client = OpenAI(
-            base_url="https://router.huggingface.co/v1",
+            base_url=(
+                "https://router.huggingface.co/v1"
+            ),
             api_key=self.token,
         )
-
 
     def chat(
         self,
         message: str,
         system_prompt: str = "",
+        conversation_history=None,
     ) -> str:
 
         codimente_prompt = (
@@ -48,21 +50,40 @@ class HostedProvider(ModelProvider):
                 + system_prompt
             )
 
+        messages = [
+            {
+                "role": "system",
+                "content": codimente_prompt,
+            }
+        ]
+
+        # Add previous conversation messages.
+        if conversation_history:
+
+            for history_message in conversation_history:
+
+                if history_message.role in (
+                    "user",
+                    "assistant",
+                ):
+                    messages.append(
+                        {
+                            "role": history_message.role,
+                            "content": history_message.content,
+                        }
+                    )
+
+        # Add the current question last.
+        messages.append(
+            {
+                "role": "user",
+                "content": message,
+            }
+        )
+
         response = self.client.chat.completions.create(
-
             model=self.model,
-
-            messages=[
-                {
-                    "role": "system",
-                    "content": codimente_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": message,
-                },
-            ],
-
+            messages=messages,
             max_tokens=500,
         )
 
