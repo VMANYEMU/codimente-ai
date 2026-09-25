@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Knowledge Base — Codimente Private AI</title>
+
+    <link rel="stylesheet"
+          href="{% static 'core/css/style.css' %}">
+
+</head>
+
+<body class="chat-body">
+
+<div class="chat-layout">
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'core/images/Codimente-logo.png' %}"
+            class="sidebar-logo"
+            alt="Codimente"
+        >
+
+        <a
+            class="new-chat knowledge-back-link"
+            href="{% url 'chat' %}"
+        >
+            ← Back to chat
+        </a>
+
+        <div class="assistant-navigation">
+
+            <p class="section-label">
+                KNOWLEDGE MANAGEMENT
+            </p>
+
+            <p class="knowledge-intro">
+                Upload, reprocess or remove the approved
+                documents each assistant answers from.
+                Supported formats: PDF, DOCX, TXT (max
+                20&nbsp;MB).
+            </p>
+
+        </div>
+
+        <div class="sidebar-bottom">
+
+            <span class="status-dot"></span>
+
+            Private AI Environment
+
+        </div>
+
+    </aside>
+
+    <main class="chat-main knowledge-main">
+
+        <header class="chat-header">
+
+            <div>
+                <strong>
+                    Organisational Knowledge
+                </strong>
+
+                <span>
+                    {{ membership.organisation.name }}
+                </span>
+            </div>
+
+            <div class="private-badge">
+                PRIVATE
+            </div>
+
+        </header>
+
+        {% if messages %}
+
+            <div class="knowledge-messages">
+
+                {% for message in messages %}
+
+                    <div class="knowledge-message {{ message.tags }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% endif %}
+
+        <section class="knowledge-content">
+
+            {% for section in sections %}
+
+                <div class="knowledge-section">
+
+                    <div class="knowledge-section-header">
+
+                        <h2>
+                            ◈ {{ section.assistant.name }}
+                        </h2>
+
+                        <a
+                            class="knowledge-upload-button"
+                            href="{% url 'document-upload' section.assistant.slug %}"
+                        >
+                            + Upload document
+                        </a>
+
+                    </div>
+
+                    {% if section.knowledge_base %}
+
+                        <p class="knowledge-base-name">
+                            {{ section.knowledge_base.name }}
+                        </p>
+
+                    {% endif %}
+
+                    {% if section.documents %}
+
+                        <table class="knowledge-table">
+
+                            <thead>
+
+                                <tr>
+                                    <th>Document</th>
+                                    <th>Status</th>
+                                    <th>Uploaded</th>
+                                    <th>Actions</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {% for document in section.documents %}
+
+                                    <tr>
+
+                                        <td>
+                                            {{ document.title }}
+                                        </td>
+
+                                        <td>
+
+                                            {% if document.is_processed %}
+
+                                                <span class="knowledge-status processed">
+                                                    Processed
+                                                </span>
+
+                                            {% else %}
+
+                                                <span class="knowledge-status failed">
+                                                    Not processed
+                                                </span>
+
+                                            {% endif %}
+
+                                        </td>
+
+                                        <td>
+                                            {{ document.uploaded_at|date:"Y-m-d H:i" }}
+                                        </td>
+
+                                        <td class="knowledge-actions">
+
+                                            <form
+                                                method="post"
+                                                action="{% url 'document-reprocess' document.id %}"
+                                                class="inline-form"
+                                            >
+                                                {% csrf_token %}
+
+                                                <button
+                                                    type="submit"
+                                                    class="knowledge-action-button"
+                                                >
+                                                    Reprocess
+                                                </button>
+
+                                            </form>
+
+                                            <form
+                                                method="post"
+                                                action="{% url 'document-delete' document.id %}"
+                                                class="inline-form"
+                                                data-confirm="Delete this document and all of its knowledge chunks?"
+                                            >
+                                                {% csrf_token %}
+
+                                                <button
+                                                    type="submit"
+                                                    class="knowledge-action-button danger"
+                                                >
+                                                    Delete
+                                                </button>
+
+                                            </form>
+
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    {% else %}
+
+                        <p class="knowledge-empty">
+                            No documents yet. Upload the policies,
+                            procedures or manuals this assistant
+                            should answer from.
+                        </p>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        </section>
+
+    </main>
+
+</div>
+
+<script>
+    // Confirm destructive document deletions.
+
+    document
+        .querySelectorAll("form[data-confirm]")
+        .forEach(form => {
+
+            form.addEventListener(
+                "submit",
+                function(event) {
+
+                    if (
+                        !window.confirm(
+                            form.dataset.confirm
+                        )
+                    ) {
+                        event.preventDefault();
+                    }
+                }
+            );
+        });
+</script>
+
+</body>
+
+</html>

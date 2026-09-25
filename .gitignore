@@ -5,3 +5,6 @@ __pycache__/
 db.sqlite3
 staticfiles/
 media/
+# temporary test postgres cluster
+_test_pg/
+_test_pg.log

@@ -93,8 +93,15 @@ Conversations are persistent and per-assistant:
    venv/Scripts/python manage.py runserver
    ```
 
-3. Optional: grant the DB role permission to run the test suite
-   (tests create a temporary database):
+3. Seed the demo organisation, assistants, knowledge bases
+   and an admin user (idempotent — safe to re-run):
+
+   ```
+   venv/Scripts/python manage.py seed_organisation --admin-password "your-password"
+   ```
+
+4. Optional: grant the DB role permission to run the test
+   suite (tests create a temporary database):
 
    ```sql
    ALTER ROLE codimente_ai_user CREATEDB;
@@ -114,11 +121,16 @@ The repository ships with `render.yaml` (blueprint) and
    - `HF_TOKEN` — Hugging Face token for the inference router
    - `AI_MODEL` — optional, defaults to
      `openai/gpt-oss-120b:cerebras`
+   - `SEED_ADMIN_PASSWORD` — password for the organisation
+     admin user created automatically on deploy
+     (username: `admin`)
 4. Add your custom domain `ai.codimentesystems.com` to the web
    service and create the CNAME at your DNS provider.
 5. Deploy. `build.sh` installs dependencies, collects static
-   files (whitenoise) and applies migrations — including the
-   `CREATE EXTENSION vector` step.
+   files (whitenoise), applies migrations — including the
+   `CREATE EXTENSION vector` step — and seeds the default
+   organisation, departmental assistants and admin user
+   automatically.
 
 ### Environment variables (production)
 
@@ -130,6 +142,7 @@ The repository ships with `render.yaml` (blueprint) and
 | `CSRF_TRUSTED_ORIGINS` | `https://ai.codimentesystems.com` |
 | `DATABASE_URL` | Injected by Render automatically |
 | `HF_TOKEN` | Hugging Face router token |
+| `SEED_ADMIN_PASSWORD` | Password for the seeded admin user |
 
 Production hardening activates automatically when `DEBUG=False`:
 HSTS, secure/CSRF cookies, SSL redirect, `X_FRAME_OPTIONS=DENY`.

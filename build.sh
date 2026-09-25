@@ -15,3 +15,10 @@ python manage.py collectstatic --noinput
 # created by migration knowledge 0001 via pgvector's
 # VectorField / CreateExtension operation).
 python manage.py migrate --noinput
+
+# Seed the default organisation, assistants, knowledge
+# bases and an organisation admin. Idempotent: existing
+# data is never overwritten or duplicated. If no password
+# is configured, a random one is generated and printed to
+# the build log once.
+python manage.py seed_organisation --admin-password "${SEED_ADMIN_PASSWORD:-}"

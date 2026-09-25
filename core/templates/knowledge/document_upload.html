@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Upload Document — Codimente Private AI</title>
+
+    <link rel="stylesheet"
+          href="{% static 'core/css/style.css' %}">
+
+</head>
+
+<body class="chat-body">
+
+<div class="chat-layout">
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'core/images/Codimente-logo.png' %}"
+            class="sidebar-logo"
+            alt="Codimente"
+        >
+
+        <a
+            class="new-chat knowledge-back-link"
+            href="{% url 'knowledge-home' %}"
+        >
+            ← Back to knowledge
+        </a>
+
+        <div class="assistant-navigation">
+
+            <p class="section-label">
+                UPLOAD DOCUMENT
+            </p>
+
+            <p class="knowledge-intro">
+                {{ assistant.name }}
+            </p>
+
+            <p class="knowledge-intro">
+                The document is extracted, split into chunks
+                and embedded into
+                {{ knowledge_base.name }}'s vector index
+                immediately after upload.
+            </p>
+
+        </div>
+
+        <div class="sidebar-bottom">
+
+            <span class="status-dot"></span>
+
+            Private AI Environment
+
+        </div>
+
+    </aside>
+
+    <main class="chat-main knowledge-main">
+
+        <header class="chat-header">
+
+            <div>
+                <strong>
+                    Organisational Knowledge
+                </strong>
+
+                <span>
+                    {{ assistant.name }}
+                </span>
+            </div>
+
+            <div class="private-badge">
+                PRIVATE
+            </div>
+
+        </header>
+
+        <section class="knowledge-content">
+
+            <div class="knowledge-section">
+
+                <form
+                    method="post"
+                    enctype="multipart/form-data"
+                    class="knowledge-upload-form"
+                >
+
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+
+                        <div class="knowledge-message error">
+                            {{ form.non_field_errors }}
+                        </div>
+
+                    {% endif %}
+
+                    <div class="knowledge-field">
+
+                        <label for="{{ form.file.id_for_label }}">
+                            Document file
+                        </label>
+
+                        {{ form.file }}
+
+                        {{ form.file.errors }}
+
+                    </div>
+
+                    <div class="knowledge-field">
+
+                        <label for="{{ form.title.id_for_label }}">
+                            Title (optional)
+                        </label>
+
+                        {{ form.title }}
+
+                        {{ form.title.errors }}
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="knowledge-upload-button"
+                    >
+                        Upload and process
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

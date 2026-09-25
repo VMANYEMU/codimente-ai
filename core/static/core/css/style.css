@@ -1089,3 +1089,226 @@ textarea {
     background:
         rgba(109, 137, 169, 0.48);
 }
+
+
+/* ==================================================
+   KNOWLEDGE MANAGEMENT PAGES
+   ================================================== */
+
+.knowledge-back-link {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    margin-bottom: 25px;
+}
+
+.knowledge-intro {
+    color: #93a9c4;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 10px 0;
+}
+
+.knowledge-main {
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.knowledge-content {
+    padding: 25px 30px 60px;
+    flex: 1;
+}
+
+.knowledge-section {
+    background: #0b1e38;
+    border: 1px solid #1c304b;
+    border-radius: 12px;
+    padding: 22px 25px;
+    margin-bottom: 25px;
+}
+
+.knowledge-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.knowledge-section-header h2 {
+    font-size: 1.15rem;
+    margin: 0;
+    color: #7cc0ff;
+}
+
+.knowledge-base-name {
+    color: #7694b5;
+    font-size: 0.85rem;
+    margin: 6px 0 0;
+}
+
+.knowledge-upload-button {
+    display: inline-block;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #168cff;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.knowledge-upload-button:hover {
+    background: #3da0ff;
+}
+
+.knowledge-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18px;
+    font-size: 0.92rem;
+}
+
+.knowledge-table th {
+    text-align: left;
+    color: #7694b5;
+    font-weight: normal;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 10px;
+    border-bottom: 1px solid #1c304b;
+}
+
+.knowledge-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #122642;
+}
+
+.knowledge-status {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+}
+
+.knowledge-status.processed {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+}
+
+.knowledge-status.failed {
+    background: rgba(231, 76, 60, 0.15);
+    color: #ff6b5e;
+}
+
+.knowledge-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.knowledge-action-button {
+    padding: 6px 14px;
+    border: 1px solid #54779f;
+    border-radius: 6px;
+    background: transparent;
+    color: white;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.knowledge-action-button:hover {
+    background: rgba(84, 119, 159, 0.25);
+}
+
+.knowledge-action-button.danger {
+    border-color: #a04034;
+    color: #ff9c92;
+}
+
+.knowledge-action-button.danger:hover {
+    background: rgba(160, 64, 52, 0.25);
+}
+
+.knowledge-empty {
+    color: #7694b5;
+    font-style: italic;
+    margin-top: 18px;
+}
+
+.knowledge-messages {
+    padding: 15px 30px 0;
+}
+
+.knowledge-message {
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 0.92rem;
+}
+
+.knowledge-message.success {
+    background: rgba(46, 204, 113, 0.12);
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    color: #7ee2a8;
+}
+
+.knowledge-message.error {
+    background: rgba(231, 76, 60, 0.12);
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    color: #ff9c92;
+}
+
+.knowledge-upload-form {
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.knowledge-field label {
+    display: block;
+    color: #93a9c4;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+.knowledge-field input[type="text"],
+.knowledge-field input[type="file"] {
+    width: 100%;
+}
+
+.knowledge-field input[type="text"] {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #1c304b;
+    background: #071426;
+    color: white;
+    font-size: 0.95rem;
+}
+
+.knowledge-field ul {
+    color: #ff9c92;
+    font-size: 0.85rem;
+    margin: 6px 0 0;
+    padding-left: 18px;
+}
+
+.knowledge-field input[type="file"]::file-selector-button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #168cff;
+    color: white;
+    cursor: pointer;
+    margin-right: 14px;
+}
+
+.knowledge-field input[type="file"]::file-selector-button:hover {
+    background: #3da0ff;
+}

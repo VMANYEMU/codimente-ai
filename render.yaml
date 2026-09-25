@@ -52,3 +52,9 @@ services:
 
       - key: AI_MODEL
         sync: false
+
+      # Password for the organisation admin created by
+      # the seed_organisation build step (username: admin).
+
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
