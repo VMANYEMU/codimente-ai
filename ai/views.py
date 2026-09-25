@@ -1,42 +1,57 @@
+from django.db import transaction
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 
-from knowledge.services.retriever import retrieve_knowledge
 from core.models import OrganisationMembership
+from knowledge.services.retriever import retrieve_knowledge
 
-from .models import (
-    Assistant,
-    Conversation,
-    Message,
-)
-
+from .models import Assistant, Conversation, Message
 from .providers.hosted_provider import HostedProvider
+
+
+def get_active_membership(request):
+    """
+    Return the user's active organisation membership,
+    or None when the user has none.
+    """
+    return (
+        OrganisationMembership.objects
+        .filter(
+            user=request.user,
+            is_active=True,
+        )
+        .select_related("organisation")
+        .first()
+    )
+
+
+def get_authorised_assistant(membership, assistant_slug):
+    """
+    Return the requested assistant when the membership
+    is authorised to use it, otherwise None.
+    """
+    if not assistant_slug:
+        return None
+
+    return (
+        Assistant.objects
+        .filter(
+            slug=assistant_slug,
+            organisation=membership.organisation,
+            is_active=True,
+            access_permissions__membership=membership,
+        )
+        .distinct()
+        .first()
+    )
 
 
 @api_view(["POST"])
 def chat_api(request):
 
     # -----------------------------------------
-    # 1. Get request data
-    # -----------------------------------------
-
-    message = request.data.get(
-        "message",
-        ""
-    ).strip()
-
-    assistant_slug = request.data.get(
-        "assistant",
-        "general"
-    )
-
-    conversation_id = request.data.get(
-        "conversation_id"
-    )
-
-    # -----------------------------------------
-    # 2. Require authentication
+    # 1. Require authentication
     # -----------------------------------------
 
     if not request.user.is_authenticated:
@@ -48,18 +63,10 @@ def chat_api(request):
         )
 
     # -----------------------------------------
-    # 3. Find active organisation membership
+    # 2. Find active organisation membership
     # -----------------------------------------
 
-    membership = (
-        OrganisationMembership.objects
-        .filter(
-            user=request.user,
-            is_active=True,
-        )
-        .select_related("organisation")
-        .first()
-    )
+    membership = get_active_membership(request)
 
     if membership is None:
         return Response(
@@ -73,8 +80,30 @@ def chat_api(request):
         )
 
     # -----------------------------------------
-    # 4. Validate the question
+    # 3. Validate the request data
     # -----------------------------------------
+
+    message = (request.data.get("message") or "").strip()
+
+    assistant_slug = (
+        request.data.get("assistant") or "general"
+    )
+
+    conversation_id = request.data.get("conversation_id")
+
+    if conversation_id is not None:
+        try:
+            conversation_id = int(conversation_id)
+        except (TypeError, ValueError):
+            return Response(
+                {
+                    "error": (
+                        "The conversation id must be "
+                        "a whole number."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     if not message:
         return Response(
@@ -85,18 +114,15 @@ def chat_api(request):
         )
 
     # -----------------------------------------
-    # 5. Authorize selected assistant
+    # 4. Authorize selected assistant
     # -----------------------------------------
 
-    try:
-        assistant = Assistant.objects.get(
-            slug=assistant_slug,
-            organisation=membership.organisation,
-            is_active=True,
-            access_permissions__membership=membership,
-        )
+    assistant = get_authorised_assistant(
+        membership,
+        assistant_slug,
+    )
 
-    except Assistant.DoesNotExist:
+    if assistant is None:
         return Response(
             {
                 "error": (
@@ -108,20 +134,30 @@ def chat_api(request):
         )
 
     # -----------------------------------------
-    # 6. Find or create conversation
+    # 5. Validate an existing conversation
+    #
+    # The security chain is enforced here:
+    #   the conversation must belong to the
+    #   logged-in user, their organisation,
+    #   and an assistant they may use.
     # -----------------------------------------
+
+    conversation = None
 
     if conversation_id:
 
-        try:
-            conversation = Conversation.objects.get(
+        conversation = (
+            Conversation.objects
+            .filter(
                 id=conversation_id,
                 user=request.user,
                 organisation=membership.organisation,
                 assistant=assistant,
             )
+            .first()
+        )
 
-        except Conversation.DoesNotExist:
+        if conversation is None:
             return Response(
                 {
                     "error": (
@@ -132,34 +168,26 @@ def chat_api(request):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-    else:
+    # -----------------------------------------
+    # 6. Load PREVIOUS conversation history
+    #
+    # Done BEFORE saving the new message so
+    # history and the current message stay
+    # clearly separated.
+    # -----------------------------------------
 
-        conversation = Conversation.objects.create(
-            organisation=membership.organisation,
-            user=request.user,
-            assistant=assistant,
-            title=message[:80],
+    conversation_history = []
+
+    if conversation:
+
+        conversation_history = list(
+            conversation.messages
+            .order_by("-created_at", "-id")[:10]
         )
 
-    # -----------------------------------------
-    # 7. Load PREVIOUS conversation history
-    #
-    # Do this BEFORE saving the new message.
-    # This makes it clear which messages are
-    # history and which message is current.
-    # -----------------------------------------
-
-    conversation_history = list(
-        conversation.messages
-        .order_by(
-            "-created_at",
-            "-id",
-        )[:10]
-    )
-
-    # Database query returned newest first.
-    # The LLM needs oldest -> newest.
-    conversation_history.reverse()
+        # The database returned newest first.
+        # The LLM needs oldest -> newest.
+        conversation_history.reverse()
 
     # -----------------------------------------
     # 8. Build contextual retrieval query
@@ -202,20 +230,10 @@ def chat_api(request):
         retrieval_parts
     )
 
-    # -----------------------------------------
-    # 9. Save current user's message
-    # -----------------------------------------
-
-    Message.objects.create(
-        conversation=conversation,
-        role="user",
-        content=message,
-    )
-
     try:
 
         # -----------------------------------------
-        # 10. Retrieve organisational knowledge
+        # 8. Retrieve organisational knowledge
         #
         # IMPORTANT:
         # Search using contextual retrieval_query,
@@ -228,7 +246,7 @@ def chat_api(request):
         )
 
         # -----------------------------------------
-        # 11. Build knowledge context
+        # 9. Build knowledge context
         # -----------------------------------------
 
         knowledge_context = ""
@@ -241,7 +259,7 @@ def chat_api(request):
             )
 
         # -----------------------------------------
-        # 12. Build grounded RAG instructions
+        # 10. Build grounded RAG instructions
         # -----------------------------------------
 
         rag_prompt = assistant.system_prompt
@@ -311,7 +329,7 @@ def chat_api(request):
             )
 
         # -----------------------------------------
-        # 13. Ask AI provider
+        # 11. Ask AI provider
         # -----------------------------------------
 
         provider = HostedProvider()
@@ -323,7 +341,7 @@ def chat_api(request):
         )
 
         # -----------------------------------------
-        # 14. Prepare source information
+        # 12. Prepare source information
         # -----------------------------------------
 
         sources = [
@@ -347,18 +365,41 @@ def chat_api(request):
         ]
 
         # -----------------------------------------
-        # 15. Save assistant response
+        # 13. Persist everything atomically
+        #
+        # The conversation, the user message and
+        # the assistant answer are stored only once
+        # a successful answer exists. A failed AI
+        # call leaves no orphan data and the user
+        # can safely retry.
         # -----------------------------------------
 
-        Message.objects.create(
-            conversation=conversation,
-            role="assistant",
-            content=answer,
-            sources=sources,
-        )
+        with transaction.atomic():
+
+            if conversation is None:
+
+                conversation = Conversation.objects.create(
+                    organisation=membership.organisation,
+                    user=request.user,
+                    assistant=assistant,
+                    title=message[:80],
+                )
+
+            Message.objects.create(
+                conversation=conversation,
+                role="user",
+                content=message,
+            )
+
+            Message.objects.create(
+                conversation=conversation,
+                role="assistant",
+                content=answer,
+                sources=sources,
+            )
 
         # -----------------------------------------
-        # 16. Return response
+        # 14. Return response
         # -----------------------------------------
 
         return Response(
@@ -374,9 +415,7 @@ def chat_api(request):
 
     except Exception as exc:
 
-        print(
-            f"AI Provider Error: {exc}"
-        )
+        print(f"AI Provider Error: {exc}")
 
         return Response(
             {
@@ -387,3 +426,144 @@ def chat_api(request):
             },
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
+@api_view(["GET"])
+def conversation_list(request):
+
+    if not request.user.is_authenticated:
+        return Response(
+            {"error": "Authentication required."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    membership = get_active_membership(request)
+
+    if membership is None:
+        return Response(
+            {"error": "No active organisation membership."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    assistant_slug = request.query_params.get("assistant")
+
+    conversations = (
+        Conversation.objects
+        .filter(
+            user=request.user,
+            organisation=membership.organisation,
+        )
+        .select_related("assistant")
+    )
+
+    if assistant_slug:
+
+        assistant = get_authorised_assistant(
+            membership,
+            assistant_slug,
+        )
+
+        if assistant is None:
+            return Response(
+                {
+                    "error": (
+                        "You do not have access "
+                        "to this assistant."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        conversations = conversations.filter(
+            assistant=assistant,
+        )
+
+    conversations = conversations.order_by(
+        "-updated_at",
+    )[:20]
+
+    return Response(
+        {
+            "conversations": [
+                {
+                    "id": conversation.id,
+                    "title": conversation.title,
+                    "assistant": conversation.assistant.slug,
+                    "updated_at": (
+                        conversation.updated_at.isoformat()
+                    ),
+                }
+                for conversation in conversations
+            ],
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["GET"])
+def conversation_detail(request, conversation_id):
+
+    if not request.user.is_authenticated:
+        return Response(
+            {"error": "Authentication required."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    membership = get_active_membership(request)
+
+    if membership is None:
+        return Response(
+            {"error": "No active organisation membership."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # The security chain:
+    #   conversation belongs to the logged-in user,
+    #   to the user's organisation, and to an
+    #   assistant the user is authorised to use.
+
+    conversation = (
+        Conversation.objects
+        .filter(
+            id=conversation_id,
+            user=request.user,
+            organisation=membership.organisation,
+            assistant__is_active=True,
+            assistant__access_permissions__membership=membership,
+        )
+        .select_related("assistant")
+        .distinct()
+        .first()
+    )
+
+    if conversation is None:
+        return Response(
+            {"error": "Conversation not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    messages = conversation.messages.order_by(
+        "created_at",
+        "id",
+    )
+
+    return Response(
+        {
+            "conversation_id": conversation.id,
+            "title": conversation.title,
+            "assistant": {
+                "id": conversation.assistant.id,
+                "name": conversation.assistant.name,
+                "slug": conversation.assistant.slug,
+            },
+            "messages": [
+                {
+                    "id": message.id,
+                    "role": message.role,
+                    "content": message.content,
+                    "sources": message.sources,
+                    "created_at": message.created_at.isoformat(),
+                }
+                for message in messages
+            ],
+        },
+        status=status.HTTP_200_OK,
+    )

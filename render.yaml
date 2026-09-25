@@ -1,0 +1,54 @@
+# Render infrastructure for Codimente Private AI.
+# Deploy: create a new "Blueprint" in Render and point it
+# at this repository, or commit this file and Render will
+# detect it when you create services manually.
+
+databases:
+  - name: codimente-ai-db
+    databaseName: codimente_ai
+    user: codimente
+    plan: basic-256mb
+    postgresMajorVersion: 17
+    # pgvector is available on Render PostgreSQL by
+    # default; the migration enables the extension.
+
+services:
+  - type: web
+    name: codimente-ai
+    runtime: python
+    plan: starter
+    region: frankfurt
+    branch: main
+    autoDeploy: true
+
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn codimente_ai.wsgi:application --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT"
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.1"
+
+      - key: DJANGO_SETTINGS_MODULE
+        value: "codimente_ai.settings"
+
+      - key: DEBUG
+        value: "False"
+
+      # Render injects DATABASE_URL automatically from the
+      # database block above into services in the same
+      # blueprint. It is listed here for clarity only.
+
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: ALLOWED_HOSTS
+        value: "ai.codimentesystems.com,.onrender.com"
+
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://ai.codimentesystems.com"
+
+      - key: HF_TOKEN
+        sync: false
+
+      - key: AI_MODEL
+        sync: false

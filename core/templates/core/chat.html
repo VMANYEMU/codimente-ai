@@ -18,6 +18,7 @@
 </head>
 
 <body class="chat-body">
+<!-- CODIMENTE CURRENT CHAT TEMPLATE 2026 -->
 
 {% csrf_token %}
 
@@ -25,51 +26,89 @@
 
     <aside class="sidebar">
 
-        <img
-            src="{% static 'core/images/codimente-logo.png' %}"
-            class="sidebar-logo"
-            alt="Codimente">
+			<img
+				src="{% static 'core/images/Codimente-logo.png' %}"
+				class="sidebar-logo"
+				alt="Codimente"
+			>
 
-        <button class="new-chat">
-            + New conversation
-        </button>
+			<button
+				class="new-chat"
+				id="newChatButton"
+				type="button"
+			>
+				+ New conversation
+			</button>
 
-        <div class="assistant-section">
 
-            
-            <div class="assistant-section">
+			<div class="assistant-navigation" id="assistantNavigation">
 
 				<p class="section-label">
 					AI ASSISTANTS
 				</p>
 
-				{% for assistant in assistants %}
+				{% for section in assistant_sections %}
 
-					<a
-						href="{% url 'assistant-chat' assistant.slug %}"
-						class="assistant
-						{% if assistant.id == active_assistant.id %}
-							active
-						{% endif %}"
-					>
-						◈ {{ assistant.name }}
-					</a>
+					<div class="assistant-group">
+
+						<a
+							href="{% url 'assistant-chat' section.assistant.slug %}"
+							class="assistant-link {% if section.assistant.id == active_assistant.id %}active{% endif %}"
+						>
+							<span class="assistant-symbol">
+								◈
+							</span>
+
+							<span class="assistant-name">
+								{{ section.assistant.name }}
+							</span>
+						</a>
+
+
+						<div class="assistant-history">
+
+							{% if section.conversations %}
+
+								{% for chat in section.conversations %}
+
+									<a
+										class="conversation-history-item"
+										data-conversation-id="{{ chat.id }}"
+										data-assistant-slug="{{ section.assistant.slug }}"
+										href="/chat/{{ section.assistant.slug }}/?conversation={{ chat.id }}"
+										title="{{ chat.title }}"
+									>
+										{{ chat.title }}
+									</a>
+
+								{% endfor %}
+
+							{% else %}
+
+								<div class="conversation-history-empty">
+									No conversations yet
+								</div>
+
+							{% endif %}
+
+						</div>
+
+					</div>
 
 				{% endfor %}
 
 			</div>
 
-        </div>
 
-        <div class="sidebar-bottom">
+			<div class="sidebar-bottom">
 
-            <span class="status-dot"></span>
+				<span class="status-dot"></span>
 
-            Private AI Environment
+				Private AI Environment
 
-        </div>
+			</div>
 
-    </aside>
+		</aside>
 
 
     <main class="chat-main">
@@ -174,9 +213,18 @@ const messageInput =
 
 const sendButton =
     document.getElementById("sendButton");
+	
+const newChatButton =
+    document.getElementById("newChatButton");
 
 const conversation =
     document.querySelector(".conversation");
+
+const assistantNavigation =
+    document.getElementById("assistantNavigation");
+
+const activeAssistantSlug =
+    "{{ active_assistant.slug|escapejs }}";
 
 let conversationId = null;
 
@@ -286,16 +334,7 @@ function escapeHtml(value) {
     return div.innerHTML;
 }
 
-async function sendMessage() {
-
-    const message = messageInput.value.trim();
-
-    if (!message) {
-        return;
-    }
-
-
-    // Remove welcome screen
+function removeWelcomeScreen() {
 
     const welcome =
         document.querySelector(".welcome");
@@ -303,9 +342,9 @@ async function sendMessage() {
     if (welcome) {
         welcome.remove();
     }
+}
 
-
-    // Display user's message
+function appendUserMessage(text) {
 
     const userMessage =
         document.createElement("div");
@@ -314,17 +353,12 @@ async function sendMessage() {
         "message user-message";
 
     userMessage.textContent =
-        message;
+        text;
 
     conversation.appendChild(userMessage);
+}
 
-
-    // Clear input
-
-    messageInput.value = "";
-
-
-    // Temporary thinking message
+function appendThinkingMessage() {
 
     const aiMessage =
         document.createElement("div");
@@ -346,9 +380,239 @@ async function sendMessage() {
 
     conversation.appendChild(aiMessage);
 
+    conversation.scrollTop =
+        conversation.scrollHeight;
+
+    return aiMessage;
+}
+
+function scrollConversationToBottom() {
 
     conversation.scrollTop =
         conversation.scrollHeight;
+}
+
+
+// ---------------------------------------------
+// Open a stored conversation.
+//
+// The backend enforces the security chain:
+// the conversation must belong to the logged-in
+// user, their organisation, and an assistant the
+// user is authorised to use.
+// ---------------------------------------------
+
+async function openConversation(conversationDbId) {
+
+    try {
+
+        const response = await fetch(
+            `/api/v1/conversations/${conversationDbId}/`,
+            {
+                method: "GET",
+                headers: {
+                    "X-CSRFToken": getCsrfToken()
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            removeWelcomeScreen();
+
+            const errorMessage =
+                document.createElement("div");
+
+            errorMessage.className =
+                "message ai-message";
+
+            errorMessage.textContent =
+                data.error ||
+                "This conversation could not be opened.";
+
+            conversation.appendChild(errorMessage);
+
+            scrollConversationToBottom();
+
+            return;
+        }
+
+        // Rebuild the display from the stored
+        // PostgreSQL messages, including sources.
+
+        conversation.innerHTML = "";
+
+        conversationId =
+            data.conversation_id;
+
+        data.messages.forEach(storedMessage => {
+
+            const messageElement =
+                createMessageElement(storedMessage.role);
+
+            if (storedMessage.role === "user") {
+
+                messageElement.textContent =
+                    storedMessage.content;
+
+            } else {
+
+                renderAIAnswer(
+                    messageElement,
+                    storedMessage.content
+                );
+
+                renderSources(
+                    messageElement,
+                    storedMessage.sources
+                );
+            }
+
+            conversation.appendChild(messageElement);
+        });
+
+        if (data.messages.length === 0) {
+
+            const emptyMessage =
+                document.createElement("div");
+
+            emptyMessage.className =
+                "message ai-message";
+
+            emptyMessage.textContent =
+                "This conversation has no messages yet.";
+
+            conversation.appendChild(emptyMessage);
+        }
+
+        highlightActiveConversation(conversationDbId);
+
+        messageInput.focus();
+
+        scrollConversationToBottom();
+
+    } catch (error) {
+
+        console.error(error);
+
+        removeWelcomeScreen();
+
+        const errorMessage =
+            document.createElement("div");
+
+        errorMessage.className =
+            "message ai-message";
+
+        errorMessage.textContent =
+            "Codimente AI could not connect to the server.";
+
+        conversation.appendChild(errorMessage);
+    }
+}
+
+function highlightActiveConversation(conversationDbId) {
+
+    document
+        .querySelectorAll(".conversation-history-item")
+        .forEach(item => {
+
+            item.classList.toggle(
+                "active",
+                item.dataset.conversationId ===
+                    String(conversationDbId)
+            );
+        });
+}
+
+// ---------------------------------------------
+// Conversation click handling.
+//
+// Conversations of the active assistant open
+// immediately. Conversations of another
+// assistant navigate to that assistant's chat
+// page with ?conversation=<id> and open there.
+// ---------------------------------------------
+
+assistantNavigation.addEventListener(
+    "click",
+    function(event) {
+
+        const item = event.target.closest(
+            ".conversation-history-item"
+
+        );
+
+        if (!item) {
+            return;
+        }
+
+        const conversationDbId =
+            item.dataset.conversationId;
+
+        const assistantSlug =
+            item.dataset.assistantSlug;
+
+        if (!conversationDbId) {
+            return;
+        }
+        if (assistantSlug === activeAssistantSlug) {
+
+            event.preventDefault();
+
+            openConversation(conversationDbId);
+        }
+
+        // Otherwise the anchor href performs a
+        // normal navigation to the other
+        // assistant's page.
+    }
+);
+
+// Open a conversation requested in the URL,
+// for example /chat/human-resources/?conversation=6
+
+(function openConversationFromUrl() {
+
+    const params =
+        new URLSearchParams(window.location.search);
+
+    const requestedId = params.get("conversation");
+
+    if (requestedId) {
+
+        history.replaceState(
+            null,
+            "",
+            window.location.pathname
+        );
+
+        openConversation(requestedId);
+    }
+})();
+
+async function sendMessage() {
+
+    const message = messageInput.value.trim();
+
+    if (!message) {
+        return;
+    }
+
+
+    removeWelcomeScreen();
+
+    appendUserMessage(message);
+
+    // Clear input
+
+    messageInput.value = "";
+
+
+    // Temporary thinking message
+
+    const aiMessage = appendThinkingMessage();
 
 
     try {
@@ -365,7 +629,7 @@ async function sendMessage() {
 
 				body: JSON.stringify({
 					message: message,
-					assistant: "{{ active_assistant.slug }}",
+					assistant: activeAssistantSlug,
 					conversation_id: conversationId
 				})
 			}
@@ -384,7 +648,7 @@ async function sendMessage() {
 
             return;
         }
-		
+
 		conversationId = data.conversation_id;
 
         renderAIAnswer(
@@ -397,6 +661,11 @@ async function sendMessage() {
 			data.sources
 		);
 
+        addConversationToSidebar(
+            data.conversation_id,
+            message
+        );
+
 
     } catch (error) {
 
@@ -408,10 +677,136 @@ async function sendMessage() {
     }
 
 
-    conversation.scrollTop =
-        conversation.scrollHeight;
+    scrollConversationToBottom();
 }
 
+function addConversationToSidebar(
+    conversationDbId,
+    firstMessage
+) {
+
+    // The sidebar is server-rendered, so a newly
+    // created conversation is added here without
+    // a full page reload.
+
+    if (
+        document.querySelector(
+            `.conversation-history-item` +
+            `[data-conversation-id="${conversationDbId}"]`
+        )
+    ) {
+        highlightActiveConversation(conversationDbId);
+        return;
+    }
+
+    const activeGroup = Array.from(
+        document.querySelectorAll(".assistant-group")
+    ).find(group =>
+        group.querySelector(".assistant-link.active")
+    );
+
+    if (!activeGroup) {
+        return;
+    }
+
+    const historyContainer =
+        activeGroup.querySelector(".assistant-history");
+
+    if (!historyContainer) {
+        return;
+    }
+
+    const emptyNotice = historyContainer.querySelector(
+        ".conversation-history-empty"
+    );
+
+    if (emptyNotice) {
+        emptyNotice.remove();
+    }
+
+    const item = document.createElement("a");
+
+    item.className =
+        "conversation-history-item";
+
+    item.dataset.conversationId =
+        conversationDbId;
+
+    item.dataset.assistantSlug =
+        activeAssistantSlug;
+
+    item.href =
+        `/chat/${activeAssistantSlug}/?conversation=${conversationDbId}`;
+
+    item.title =
+        firstMessage;
+
+    item.textContent =
+        firstMessage;
+
+    historyContainer.prepend(item);
+
+    highlightActiveConversation(conversationDbId);
+}
+
+function startNewConversation() {
+
+    // Forget the current database conversation.
+    // The next message will create a new one.
+    conversationId = null;
+
+    highlightActiveConversation(null);
+
+    // Clear the current conversation display.
+    conversation.innerHTML = `
+        <div class="welcome">
+
+            <div class="ai-icon">
+                C
+            </div>
+
+            <h1>
+                {{ active_assistant.name|escapejs }}
+            </h1>
+
+            <p>
+                {{ active_assistant.description|escapejs }}
+            </p>
+
+            <p>
+                Ask questions about your organisation's
+                knowledge, documents and connected systems.
+            </p>
+
+            <div class="suggestions">
+
+                <button>
+                    Search organisational knowledge
+                </button>
+
+                <button>
+                    Summarise a document
+                </button>
+
+                <button>
+                    Analyse business information
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+    // Clear and focus the input box.
+    messageInput.value = "";
+    messageInput.focus();
+}
+
+
+newChatButton.addEventListener(
+    "click",
+    startNewConversation
+);
 
 sendButton.addEventListener(
     "click",

@@ -527,3 +527,565 @@ textarea {
         transform: translateY(-3px);
     }
 }
+/* ==========================================
+   ASSISTANT NAVIGATION AND CONVERSATIONS
+   ========================================== */
+
+.assistant-section {
+    margin-top: 30px;
+
+    flex: 1;
+    min-height: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding-right: 4px;
+}
+
+
+/* Assistant heading */
+
+.section-label {
+    margin: 0 0 12px 0;
+    padding-left: 12px;
+
+    color: #6d89a9;
+
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+}
+
+
+/* Individual assistant */
+
+.assistant {
+    display: block;
+
+    padding: 13px;
+    margin-bottom: 4px;
+
+    border-radius: 7px;
+
+    color: #9fb2c8;
+
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.assistant:hover {
+    background: rgba(18, 40, 68, 0.55);
+    color: white;
+}
+
+.assistant.active {
+    background: #122844;
+    color: white;
+    font-weight: 600;
+}
+
+
+/* Conversation branch belonging only
+   to the active assistant */
+
+.assistant-conversations {
+    position: relative;
+
+    margin:
+        2px
+        0
+        14px
+        20px;
+
+    padding:
+        4px
+        0
+        4px
+        18px;
+
+    max-height: 175px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+
+/* Vertical branch line */
+
+.assistant-conversations::before {
+    content: "";
+
+    position: absolute;
+
+    left: 5px;
+    top: 0;
+    bottom: 8px;
+
+    width: 1px;
+
+    background:
+        rgba(109, 137, 169, 0.35);
+}
+
+
+/* Conversation title */
+
+.recent-conversation-item {
+    position: relative;
+
+    padding: 7px 8px;
+
+    margin: 1px 0;
+
+    border-radius: 5px;
+
+    color: #aebdd0;
+
+    font-size: 12px;
+    line-height: 1.35;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* Small connector from branch to conversation */
+
+.recent-conversation-item::before {
+    content: "";
+
+    position: absolute;
+
+    left: -13px;
+    top: 50%;
+
+    width: 8px;
+    height: 1px;
+
+    background:
+        rgba(109, 137, 169, 0.35);
+}
+
+
+.recent-conversation-item:hover {
+    color: white;
+
+    background:
+        rgba(255, 255, 255, 0.05);
+}
+
+
+/* No conversations */
+
+.recent-conversation-empty {
+    padding: 7px 8px;
+
+    color: #7289a4;
+
+    font-size: 12px;
+}
+
+
+/* ==========================================
+   SUBTLE SCROLLBARS
+   ========================================== */
+
+.assistant-section {
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(109, 137, 169, 0.30)
+        transparent;
+}
+
+.assistant-conversations {
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(109, 137, 169, 0.30)
+        transparent;
+}
+
+.conversation {
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(109, 137, 169, 0.35)
+        transparent;
+}
+
+
+/* Chrome / Edge */
+
+.assistant-section::-webkit-scrollbar,
+.assistant-conversations::-webkit-scrollbar,
+.conversation::-webkit-scrollbar {
+    width: 6px;
+}
+
+.assistant-section::-webkit-scrollbar-track,
+.assistant-conversations::-webkit-scrollbar-track,
+.conversation::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.assistant-section::-webkit-scrollbar-thumb,
+.assistant-conversations::-webkit-scrollbar-thumb,
+.conversation::-webkit-scrollbar-thumb {
+    background:
+        rgba(109, 137, 169, 0.30);
+
+    border-radius: 10px;
+}
+
+.assistant-section::-webkit-scrollbar-thumb:hover,
+.assistant-conversations::-webkit-scrollbar-thumb:hover,
+.conversation::-webkit-scrollbar-thumb:hover {
+    background:
+        rgba(109, 137, 169, 0.55);
+}
+
+/* ==================================================
+   CODIMENTE PRIVATE AI - SIDEBAR NAVIGATION
+   ================================================== */
+
+.sidebar {
+    width: 270px;
+    height: 100vh;
+
+    flex-shrink: 0;
+
+    background: #09182c;
+    border-right: 1px solid #1c304b;
+
+    padding: 25px 18px;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+}
+
+
+.sidebar-logo {
+    width: 150px;
+
+    margin:
+        0
+        auto
+        30px;
+
+    flex-shrink: 0;
+}
+
+
+.new-chat {
+    width: 100%;
+
+    flex-shrink: 0;
+
+    background: #168cff;
+    color: white;
+
+    border: none;
+}
+
+
+/* ==================================================
+   ASSISTANT NAVIGATION
+   ================================================== */
+
+.assistant-navigation {
+    flex: 1;
+    min-height: 0;
+
+    margin-top: 28px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding-right: 4px;
+}
+
+
+.section-label {
+    margin:
+        0
+        0
+        12px;
+
+    padding-left: 12px;
+
+    color: #6d89a9;
+
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+}
+
+
+.assistant-group {
+    margin-bottom: 5px;
+}
+
+
+.assistant-link {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    width: 100%;
+
+    padding: 12px 13px;
+
+    border-radius: 7px;
+
+    color: #9fb2c8;
+
+    text-decoration: none;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+
+.assistant-link:hover {
+    color: white;
+
+    background:
+        rgba(18, 40, 68, 0.55);
+}
+
+
+.assistant-link.active {
+    color: white;
+
+    background: #122844;
+
+    font-weight: 600;
+}
+
+
+.assistant-symbol {
+    flex-shrink: 0;
+
+    color: #6d89a9;
+}
+
+
+.assistant-link.active
+.assistant-symbol {
+    color: #168cff;
+}
+
+
+.assistant-name {
+    min-width: 0;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+
+/* ==================================================
+   CONVERSATIONS BELONGING TO ACTIVE ASSISTANT
+   ================================================== */
+
+.assistant-history {
+    position: relative;
+
+    margin:
+        3px
+        0
+        10px
+        25px;
+
+    padding:
+        5px
+        0
+        5px
+        18px;
+
+    max-height: 185px;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+
+/*
+   Main vertical branch.
+   This deliberately stops before the bottom
+   of the conversation area.
+*/
+
+.assistant-history::before {
+    content: "";
+
+    position: absolute;
+
+    left: 5px;
+    top: 0;
+    bottom: 10px;
+
+    width: 1px;
+
+    background:
+        rgba(109, 137, 169, 0.28);
+}
+
+
+.conversation-history-item {
+    position: relative;
+
+    padding:
+        6px
+        7px;
+
+    margin:
+        1px
+        0;
+
+    border-radius: 5px;
+
+    color: #8fa5bd;
+
+    font-size: 12px;
+    line-height: 1.35;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    transition:
+        color 0.15s ease,
+        background 0.15s ease;
+}
+
+
+/*
+   Horizontal branch connecting each
+   conversation to its assistant.
+*/
+
+.conversation-history-item::before {
+    content: "";
+
+    position: absolute;
+
+    left: -13px;
+    top: 50%;
+
+    width: 8px;
+    height: 1px;
+
+    background:
+        rgba(109, 137, 169, 0.28);
+}
+
+
+.conversation-history-item:hover {
+    color: white;
+
+    background:
+        rgba(255, 255, 255, 0.05);
+}
+
+
+.conversation-history-empty {
+    position: relative;
+
+    padding:
+        6px
+        7px;
+
+    color: #637b97;
+
+    font-size: 12px;
+}
+
+
+/* ==================================================
+   SIDEBAR FOOTER
+   ================================================== */
+
+.sidebar-bottom {
+    flex-shrink: 0;
+
+    margin-top: 12px;
+
+    padding: 12px;
+
+    color: #7289a4;
+
+    font-size: 0.8rem;
+}
+
+
+.status-dot {
+    display: inline-block;
+
+    width: 8px;
+    height: 8px;
+
+    margin-right: 7px;
+
+    border-radius: 50%;
+
+    background: #2ed47a;
+}
+
+
+/* ==================================================
+   SUBTLE SCROLLBARS
+   ================================================== */
+
+.assistant-navigation,
+.assistant-history,
+.conversation {
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        rgba(109, 137, 169, 0.28)
+        transparent;
+}
+
+
+.assistant-navigation::-webkit-scrollbar,
+.assistant-history::-webkit-scrollbar,
+.conversation::-webkit-scrollbar {
+    width: 5px;
+}
+
+
+.assistant-navigation::-webkit-scrollbar-track,
+.assistant-history::-webkit-scrollbar-track,
+.conversation::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.assistant-navigation::-webkit-scrollbar-thumb,
+.assistant-history::-webkit-scrollbar-thumb,
+.conversation::-webkit-scrollbar-thumb {
+    background:
+        rgba(109, 137, 169, 0.28);
+
+    border-radius: 10px;
+}
+
+
+.assistant-navigation::-webkit-scrollbar-thumb:hover,
+.assistant-history::-webkit-scrollbar-thumb:hover,
+.conversation::-webkit-scrollbar-thumb:hover {
+    background:
+        rgba(109, 137, 169, 0.48);
+}

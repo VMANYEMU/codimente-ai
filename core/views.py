@@ -64,6 +64,7 @@ def chat(request, assistant_slug=None):
         # /chat/
         # Open the first assistant the user is
         # authorised to access.
+
         active_assistant = assistants.first()
 
     else:
@@ -71,6 +72,7 @@ def chat(request, assistant_slug=None):
         # /chat/<assistant-slug>/
         # The requested assistant must also be
         # one of this user's authorised assistants.
+
         active_assistant = (
             assistants
             .filter(
@@ -85,14 +87,53 @@ def chat(request, assistant_slug=None):
             )
 
     # -----------------------------------------
-    # 4. Render the authorised chat interface
+    # 4. Find the user's recent conversations
+    #    grouped per assistant, so the sidebar
+    #    shows each assistant's own history.
+    # -----------------------------------------
+
+    recent_conversations = (
+        request.user.ai_conversations
+        .filter(
+            organisation=membership.organisation,
+        )
+        .select_related("assistant")
+        .order_by("-updated_at")
+    )
+
+    conversations_by_assistant = {
+        assistant.id: []
+        for assistant in assistants
+    }
+
+    for conversation in recent_conversations:
+
+        bucket = conversations_by_assistant.get(
+            conversation.assistant_id,
+        )
+
+        if bucket is not None and len(bucket) < 8:
+            bucket.append(conversation)
+
+    assistant_sections = [
+        {
+            "assistant": assistant,
+            "conversations": conversations_by_assistant[
+                assistant.id
+            ],
+        }
+        for assistant in assistants
+    ]
+
+    # -----------------------------------------
+    # 5. Render the authorised chat interface
     # -----------------------------------------
 
     return render(
         request,
         "core/chat.html",
         {
-            "assistants": assistants,
+            "assistant_sections": assistant_sections,
             "active_assistant": active_assistant,
             "membership": membership,
         },

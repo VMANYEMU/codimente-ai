@@ -11,6 +11,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # The vector type only exists once the pgvector
+        # extension is enabled. Fresh databases (e.g. the
+        # Render PostgreSQL instance) need this before the
+        # embedding column can be added.
+        migrations.RunSQL(
+            "CREATE EXTENSION IF NOT EXISTS vector;",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
         migrations.AddField(
             model_name='documentchunk',
             name='embedding',
