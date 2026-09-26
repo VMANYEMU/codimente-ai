@@ -1,0 +1,5 @@
+# Codimente Private AI is a private organisational system.
+# This hosted instance is a demo; search engines are not welcome.
+
+User-agent: *
+Disallow: /

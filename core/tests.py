@@ -627,3 +627,22 @@ class HealthEndpointTests(TestCase):
         response = self.client.get(reverse("health"))
 
         self.assertEqual(response.status_code, 200)
+
+
+class RobotsTxtTests(TestCase):
+
+    def test_robots_txt_disallows_all_crawlers(self):
+
+        response = self.client.get(reverse("robots"))
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            response["Content-Type"],
+            "text/plain",
+        )
+
+        self.assertIn(
+            "Disallow: /",
+            response.content.decode(),
+        )
