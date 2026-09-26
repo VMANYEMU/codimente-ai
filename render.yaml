@@ -8,6 +8,12 @@ databases:
     databaseName: codimente_ai
     user: codimente
     plan: basic-256mb
+
+    # MUST match the web service region: Render's internal
+    # database hostname only resolves within the same
+    # region.
+
+    region: frankfurt
     postgresMajorVersion: 17
     # pgvector is available on Render PostgreSQL by
     # default; the migration enables the extension.
