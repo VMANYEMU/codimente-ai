@@ -172,10 +172,12 @@ The repository ships with `render.yaml` (blueprint) and
 Production hardening activates automatically when `DEBUG=False`:
 HSTS, secure/CSRF cookies, SSL redirect, `X_FRAME_OPTIONS=DENY`.
 
-> **Note on uploads:** Render's filesystem is ephemeral unless a
-> persistent disk is attached. Attach a disk mounted at
-> `/opt/app/media` (or move document storage to object storage)
-> so uploaded knowledge documents survive deploys.
+> **Note on uploads:** the blueprint attaches a small (1 GB)
+> persistent disk at `/opt/app/media`, so uploaded documents
+> survive deploys and restarts. This hosted instance is a demo:
+> paying client deployments run on the client's own premises,
+> where the same architecture (web process + worker thread +
+> local disk) runs unchanged on a single server.
 
 ## What is complete
 

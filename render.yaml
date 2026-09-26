@@ -24,6 +24,15 @@ services:
     buildCommand: "./build.sh"
     startCommand: "gunicorn codimente_ai.wsgi:application --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT"
 
+    # Demo-sized persistent disk: uploaded knowledge
+    # documents survive deploys and restarts. Demo only —
+    # client deployments run on-premises instead.
+
+    disk:
+      name: codimente-ai-media
+      mountPath: /opt/app/media
+      sizeGB: 1
+
     envVars:
       - key: PYTHON_VERSION
         value: "3.13.1"
@@ -58,3 +67,9 @@ services:
 
       - key: SEED_ADMIN_PASSWORD
         sync: false
+
+      # Uploaded knowledge documents live on the
+      # persistent disk mounted at /opt/app/media.
+
+      - key: MEDIA_ROOT
+        value: /opt/app/media
