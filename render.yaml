@@ -48,9 +48,14 @@ services:
       - key: DEBUG
         value: "False"
 
-      # Render injects DATABASE_URL automatically from the
-      # database block above into services in the same
-      # blueprint. It is listed here for clarity only.
+      # Blueprint web services do NOT receive DATABASE_URL
+      # automatically: the connection must be declared
+      # explicitly.
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: codimente-ai-db
+          property: connectionString
 
       - key: SECRET_KEY
         generateValue: true

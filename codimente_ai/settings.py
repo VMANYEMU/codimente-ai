@@ -131,13 +131,35 @@ DATABASES = {
 
 if os.getenv("DATABASE_URL"):
 
+    database_url = os.getenv("DATABASE_URL")
+
+    # Render's INTERNAL hostname (dpg-xxxx-a, same region)
+    # does not support SSL; only the EXTERNAL hostname
+    # (dpg-xxxx-a.frankfurt-postgres.render.com) does. The
+    # injected URL does not say which one it points at, so
+    # decide from the host shape.
+
+    parsed = dj_database_url.parse(database_url)
+
+    database_host = parsed.get("HOST") or ""
+
+    is_internal_render_db = (
+        database_host.startswith("dpg-")
+        and "." not in database_host
+    )
+
+    ssl_mode = (
+        "disable" if is_internal_render_db else "require"
+    )
+
     DATABASES = {
-        "default": dj_database_url.config(
-            default=os.getenv("DATABASE_URL"),
-            conn_max_age=600,
-            ssl_require=True,
-        )
+        "default": {
+            **parsed,
+            "OPTIONS": {"sslmode": ssl_mode},
+            "CONN_MAX_AGE": 600,
+        }
     }
+    
 
 
 # Password validation
