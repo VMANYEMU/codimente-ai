@@ -61,3 +61,68 @@ class OrganisationMembership(models.Model):
             f"{self.organisation.name}"
         )
 
+
+class AuditLog(models.Model):
+    """
+    Organisation-scoped audit trail for security-relevant
+    events: logins, assistant permission changes, knowledge
+    document lifecycle and denied access attempts.
+    """
+
+    organisation = models.ForeignKey(
+        Organisation,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+        null=True,
+        blank=True,
+    )
+
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="audit_events",
+        null=True,
+        blank=True,
+    )
+
+    # Kept separately so the trail survives user deletion.
+
+    actor_username = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+    )
+
+    action = models.CharField(max_length=100)
+
+    object_type = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
+
+    object_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
+
+    detail = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return (
+            f"{self.created_at:%Y-%m-%d %H:%M} "
+            f"{self.actor_username or 'system'} "
+            f"{self.action}"
+        )
+

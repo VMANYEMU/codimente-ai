@@ -3,27 +3,11 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from core.models import OrganisationMembership
+from core.services import get_active_membership
 from knowledge.services.retriever import retrieve_knowledge
 
 from .models import Assistant, Conversation, Message
 from .providers.hosted_provider import HostedProvider
-
-
-def get_active_membership(request):
-    """
-    Return the user's active organisation membership,
-    or None when the user has none.
-    """
-    return (
-        OrganisationMembership.objects
-        .filter(
-            user=request.user,
-            is_active=True,
-        )
-        .select_related("organisation")
-        .first()
-    )
 
 
 def get_authorised_assistant(membership, assistant_slug):

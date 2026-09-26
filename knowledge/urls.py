@@ -15,6 +15,11 @@ urlpatterns = [
         name="document-upload",
     ),
     path(
+        "documents/<int:document_id>/status/",
+        views.document_status,
+        name="document-status",
+    ),
+    path(
         "documents/<int:document_id>/reprocess/",
         views.document_reprocess,
         name="document-reprocess",

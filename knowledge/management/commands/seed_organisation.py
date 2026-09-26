@@ -126,6 +126,14 @@ class Command(BaseCommand):
             default="",
             help="Email address for the organisation admin.",
         )
+        parser.add_argument(
+            "--django-admin",
+            action="store_true",
+            help=(
+                "Also grant the admin user Django staff and "
+                "superuser status (access to /admin/)."
+            ),
+        )
 
     def handle(self, *args, **options):
 
@@ -254,6 +262,22 @@ class Command(BaseCommand):
             self.stdout.write(
                 f"User '{admin_username}' already exists."
             )
+
+        if options["django_admin"]:
+
+            if (
+                not admin_user.is_staff
+                or not admin_user.is_superuser
+            ):
+
+                admin_user.is_staff = True
+                admin_user.is_superuser = True
+                admin_user.save()
+
+                self.stdout.write(
+                    f"Granted Django admin status to "
+                    f"'{admin_username}'."
+                )
 
         # ---------------------------------------------
         # 4. Admin membership

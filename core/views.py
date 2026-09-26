@@ -1,9 +1,10 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from ai.models import Assistant
-from core.models import OrganisationMembership
+from core.services import get_active_membership, record_audit
 
 
 def home(request):
@@ -20,15 +21,7 @@ def chat(request, assistant_slug=None):
     # 1. Find the logged-in user's organisation
     # -----------------------------------------
 
-    membership = (
-        OrganisationMembership.objects
-        .filter(
-            user=request.user,
-            is_active=True,
-        )
-        .select_related("organisation")
-        .first()
-    )
+    membership = get_active_membership(request)
 
     if membership is None:
         raise PermissionDenied(
@@ -126,7 +119,23 @@ def chat(request, assistant_slug=None):
     ]
 
     # -----------------------------------------
-    # 5. Render the authorised chat interface
+    # 5. Other organisations the user belongs to,
+    #    for the switcher in the sidebar.
+    # -----------------------------------------
+
+    other_memberships = (
+        request.user.organisation_memberships
+        .filter(
+            is_active=True,
+        )
+        .exclude(
+            id=membership.id,
+        )
+        .select_related("organisation")
+    )
+
+    # -----------------------------------------
+    # 6. Render the authorised chat interface
     # -----------------------------------------
 
     return render(
@@ -136,5 +145,41 @@ def chat(request, assistant_slug=None):
             "assistant_sections": assistant_sections,
             "active_assistant": active_assistant,
             "membership": membership,
+            "other_memberships": other_memberships,
         },
     )
+
+
+@login_required
+def organisation_switch(request, membership_id):
+
+    target_membership = get_object_or_404(
+        request.user.organisation_memberships,
+        id=membership_id,
+        is_active=True,
+    )
+
+    request.session["active_organisation_id"] = (
+        target_membership.id
+    )
+
+    record_audit(
+        organisation=target_membership.organisation,
+        actor=request.user,
+        action="organisation.switched",
+        object_type="organisation",
+        object_id=target_membership.organisation_id,
+        detail={
+            "organisation_name": (
+                target_membership.organisation.name
+            )
+        },
+    )
+
+    messages.success(
+        request,
+        "You are now working in "
+        f"{target_membership.organisation.name}.",
+    )
+
+    return redirect("chat")

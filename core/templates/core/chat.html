@@ -109,6 +109,40 @@
 					Manage knowledge
 				</a>
 
+				<a
+					class="new-chat knowledge-back-link"
+					href="{% url 'audit-log' %}"
+				>
+					Audit log
+				</a>
+
+			{% endif %}
+
+			{% if other_memberships %}
+
+				<div class="org-switcher">
+
+					<p class="section-label">
+						ORGANISATIONS
+					</p>
+
+					<p class="knowledge-intro">
+						{{ membership.organisation.name }}
+					</p>
+
+					{% for other in other_memberships %}
+
+						<a
+							class="org-switch-link"
+							href="{% url 'organisation-switch' other.id %}"
+						>
+							Switch to {{ other.organisation.name }}
+						</a>
+
+					{% endfor %}
+
+				</div>
+
 			{% endif %}
 
 			<div class="sidebar-bottom">
@@ -143,6 +177,22 @@
             </div>
 
         </header>
+
+        {% if messages %}
+
+            <div class="knowledge-messages">
+
+                {% for message in messages %}
+
+                    <div class="knowledge-message {{ message.tags }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% endif %}
 
 
         <section class="conversation">

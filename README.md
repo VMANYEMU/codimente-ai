@@ -53,6 +53,28 @@ Conversation
 YES → messages returned
 ```
 
+## Administration features
+
+- **Organisation switching** — users belonging to several
+  organisations can switch the active one from the chat sidebar
+  (`organisations/<id>/switch/`). The choice is stored in the
+  session and every query (assistants, conversations, knowledge,
+  audit) is scoped to it.
+- **Audit log** — an append-only, organisation-scoped trail
+  (`/audit/`, admins only, also browsable read-only in Django
+  admin). Recorded events include logins, failed login attempts,
+  logouts, assistant access grants/revocations, organisation
+  switches, document uploads, processing completions/failures,
+  reprocess requests and deletions.
+- **Background document processing** — uploads return
+  immediately with a `pending` status; a worker thread owns the
+  transitions `pending → processing → processed | failed` and
+  the knowledge page polls the `document-status` endpoint every
+  4 s so progress is visible without a manual refresh. The
+  worker module is deliberately isolated: moving to Celery or a
+  Render Background Worker later requires no changes to views
+  or templates.
+
 ## Conversations
 
 Conversations are persistent and per-assistant:
@@ -99,6 +121,9 @@ Conversations are persistent and per-assistant:
    ```
    venv/Scripts/python manage.py seed_organisation --admin-password "your-password"
    ```
+
+   Add `--django-admin` to also grant the seeded user access to
+   Django's `/admin/` site.
 
 4. Optional: grant the DB role permission to run the test
    suite (tests create a temporary database):
@@ -164,4 +189,7 @@ HSTS, secure/CSRF cookies, SSL redirect, `X_FRAME_OPTIONS=DENY`.
 - Cross-organisation protection (model-level validation)
 - Persistent conversations, multi-turn memory, contextual RAG
 - Conversation history with click-to-open, sources restored
+- Organisation switching with session-scoped active membership
+- Append-only audit log with admin UI
+- Asynchronous document processing with live status polling
 - Production deployment configuration for Render

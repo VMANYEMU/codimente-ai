@@ -1,0 +1,158 @@
+{% load static %}
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Audit Log — Codimente Private AI</title>
+
+    <link rel="stylesheet"
+          href="{% static 'core/css/style.css' %}">
+
+</head>
+
+<body class="chat-body">
+
+<div class="chat-layout">
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'core/images/Codimente-logo.png' %}"
+            class="sidebar-logo"
+            alt="Codimente"
+        >
+
+        <a
+            class="new-chat knowledge-back-link"
+            href="{% url 'chat' %}"
+        >
+            ← Back to chat
+        </a>
+
+        <div class="assistant-navigation">
+
+            <p class="section-label">
+                AUDIT LOG
+            </p>
+
+            <p class="knowledge-intro">
+                Security-relevant events across
+                {{ membership.organisation.name }}:
+                sign-ins, assistant permission changes,
+                document lifecycle and denied attempts.
+                Latest 200 events.
+            </p>
+
+        </div>
+
+        <div class="sidebar-bottom">
+
+            <span class="status-dot"></span>
+
+            Private AI Environment
+
+        </div>
+
+    </aside>
+
+    <main class="chat-main knowledge-main">
+
+        <header class="chat-header">
+
+            <div>
+                <strong>
+                    Audit Log
+                </strong>
+
+                <span>
+                    {{ membership.organisation.name }}
+                </span>
+            </div>
+
+            <div class="private-badge">
+                PRIVATE
+            </div>
+
+        </header>
+
+        <section class="knowledge-content">
+
+            <div class="knowledge-section">
+
+                {% if events %}
+
+                    <table class="knowledge-table">
+
+                        <thead>
+
+                            <tr>
+                                <th>When</th>
+                                <th>Actor</th>
+                                <th>Action</th>
+                                <th>Object</th>
+                                <th>Detail</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for event in events %}
+
+                                <tr>
+
+                                    <td class="audit-when">
+                                        {{ event.created_at|date:"Y-m-d H:i:s" }}
+                                    </td>
+
+                                    <td>
+                                        {{ event.actor_username|default:"system" }}
+                                    </td>
+
+                                    <td>
+                                        <span class="audit-action">{{ event.action }}</span>
+                                    </td>
+
+                                    <td>
+                                        {{ event.object_type }}
+                                        {% if event.object_id %}#{{ event.object_id }}{% endif %}
+                                    </td>
+
+                                    <td class="audit-detail">
+                                        {{ event.detail|default:"" }}
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                {% else %}
+
+                    <p class="knowledge-empty">
+                        No audit events yet.
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

@@ -2,13 +2,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from ai.models import Assistant, AssistantAccess
-from core.models import OrganisationMembership
+from core.services import get_active_membership, record_audit
 from knowledge.forms import DocumentUploadForm
 from knowledge.models import Document, KnowledgeBase
-from knowledge.services.document_processor import process_document
 
 
 def get_admin_membership(request):
@@ -18,16 +19,22 @@ def get_admin_membership(request):
     administrative function, so ordinary members cannot
     upload, reprocess or delete documents.
     """
-    return (
-        OrganisationMembership.objects
-        .filter(
-            user=request.user,
-            is_active=True,
-            role="admin",
-        )
-        .select_related("organisation")
-        .first()
-    )
+    membership = get_active_membership(request)
+
+    if membership is None or membership.role != "admin":
+        return None
+
+    return membership
+
+
+def _document_status_payload(document):
+
+    return {
+        "document_id": document.id,
+        "status": document.status,
+        "is_processed": document.is_processed,
+        "chunk_count": document.chunks.count(),
+    }
 
 
 @login_required
@@ -127,34 +134,41 @@ def document_upload(request, assistant_slug):
 
             document = form.save(commit=False)
             document.knowledge_base = knowledge_base
+            document.status = "pending"
             document.save()
 
-            try:
+            # -----------------------------------------
+            # Process in the background so the upload
+            # returns immediately. The worker thread
+            # owns the status transitions:
+            #   pending -> processing -> processed/failed
+            #
+            # (Render's single web service runs this as a
+            # daemon thread; swap for a real task queue
+            # without changing the status flow.)
+            # -----------------------------------------
 
-                with transaction.atomic():
+            transaction.on_commit(
+                lambda: _spawn_processing(document.id)
+            )
 
-                    chunk_count = process_document(document)
+            record_audit(
+                organisation=membership.organisation,
+                actor=request.user,
+                action="document.uploaded",
+                object_type="document",
+                object_id=document.id,
+                detail={
+                    "title": document.title,
+                    "assistant": assistant.slug,
+                },
+            )
 
-                messages.success(
-                    request,
-                    f"'{document.title}' was processed: "
-                    f"{chunk_count} chunks embedded.",
-                )
-
-            except Exception:
-
-                # Extraction or embedding failed. Remove the
-                # stored file record so the admin can retry
-                # cleanly; the file itself is left on disk.
-
-                document.delete()
-
-                messages.error(
-                    request,
-                    "The document could not be processed. "
-                    "Check that it contains readable text "
-                    "and is a valid PDF, DOCX or TXT file.",
-                )
+            messages.success(
+                request,
+                f"'{document.title}' was uploaded and is "
+                "being processed.",
+            )
 
             return redirect("knowledge-home")
 
@@ -173,7 +187,45 @@ def document_upload(request, assistant_slug):
     )
 
 
+def _spawn_processing(document_id):
+
+    """
+    Start background processing for a committed document
+    row. Import inside the function so management commands
+    and migrations are not affected by circular imports.
+    """
+
+    from knowledge.services.processing_worker import (
+        spawn_document_processing,
+    )
+
+    spawn_document_processing(document_id)
+
+
 @login_required
+def document_status(request, document_id):
+
+    membership = get_admin_membership(request)
+
+    if membership is None:
+        return JsonResponse(
+            {"error": "Forbidden."},
+            status=403,
+        )
+
+    document = get_object_or_404(
+        Document,
+        id=document_id,
+        knowledge_base__organisation=membership.organisation,
+    )
+
+    return JsonResponse(
+        _document_status_payload(document)
+    )
+
+
+@login_required
+@require_POST
 def document_reprocess(request, document_id):
 
     membership = get_admin_membership(request)
@@ -189,30 +241,32 @@ def document_reprocess(request, document_id):
         knowledge_base__organisation=membership.organisation,
     )
 
-    try:
+    document.status = "pending"
+    document.save(update_fields=["status"])
 
-        with transaction.atomic():
+    transaction.on_commit(
+        lambda: _spawn_processing(document.id)
+    )
 
-            chunk_count = process_document(document)
+    record_audit(
+        organisation=membership.organisation,
+        actor=request.user,
+        action="document.reprocess_requested",
+        object_type="document",
+        object_id=document.id,
+        detail={"title": document.title},
+    )
 
-        messages.success(
-            request,
-            f"'{document.title}' was reprocessed: "
-            f"{chunk_count} chunks embedded.",
-        )
-
-    except Exception:
-
-        messages.error(
-            request,
-            f"'{document.title}' could not be reprocessed. "
-            "The previous chunks were kept unchanged.",
-        )
+    messages.success(
+        request,
+        f"'{document.title}' is being reprocessed.",
+    )
 
     return redirect("knowledge-home")
 
 
 @login_required
+@require_POST
 def document_delete(request, document_id):
 
     membership = get_admin_membership(request)
@@ -231,6 +285,15 @@ def document_delete(request, document_id):
     if request.method == "POST":
 
         title = document.title
+
+        record_audit(
+            organisation=membership.organisation,
+            actor=request.user,
+            action="document.deleted",
+            object_type="document",
+            object_id=document.id,
+            detail={"title": title},
+        )
 
         document.delete()
 

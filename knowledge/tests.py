@@ -2,16 +2,28 @@ from unittest import mock
 
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
-from django.test import TestCase
+from django.core.files.base import ContentFile
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
 from ai.models import Assistant, AssistantAccess
-from core.models import Organisation, OrganisationMembership
+from core.models import (
+    AuditLog,
+    Organisation,
+    OrganisationMembership,
+)
 from knowledge.forms import DocumentUploadForm
 from knowledge.models import Document, KnowledgeBase
 
 
-class KnowledgeViewTestBase(TestCase):
+def _run_worker_synchronously(document_id):
+
+    from knowledge.services import processing_worker
+
+    processing_worker._process_in_thread(document_id)
+
+
+class KnowledgeFixtureMixin:
 
     def setUp(self):
 
@@ -82,7 +94,7 @@ class KnowledgeViewTestBase(TestCase):
         )
 
 
-class KnowledgeHomeTests(KnowledgeViewTestBase):
+class KnowledgeHomeTests(KnowledgeFixtureMixin, TestCase):
 
     def test_requires_admin_role(self):
 
@@ -118,9 +130,16 @@ class KnowledgeHomeTests(KnowledgeViewTestBase):
         )
 
 
-class DocumentUploadTests(KnowledgeViewTestBase):
+class DocumentUploadTests(KnowledgeFixtureMixin, TestCase):
+    """
+    View-level upload tests. The processing worker is
+    mocked out here: running it would close the shared
+    test database connection (close_old_connections), so
+    worker execution is covered by the
+    TransactionTestCase suite below.
+    """
 
-    def test_upload_processes_document(self):
+    def test_upload_defers_processing_until_commit(self):
 
         self.client.login(
             username="orgadmin",
@@ -132,16 +151,14 @@ class DocumentUploadTests(KnowledgeViewTestBase):
             args=[self.assistant.slug],
         )
 
+        # The patch must be entered BEFORE the capture so
+        # it is still active when the captured callbacks
+        # execute (with-blocks exit in reverse order).
+
         with mock.patch(
-            "knowledge.services.document_processor."
-            "EmbeddingService.embed_texts",
-            return_value=[[0.1] * 384],
-        ), mock.patch(
-            "knowledge.services.document_processor."
-            "extract_pdf",
-            return_value=[
-                {"page": 1, "text": "Annual leave is 25 days."}
-            ],
+            "knowledge.views._spawn_processing",
+        ) as fake_spawn, self.captureOnCommitCallbacks(
+            execute=True,
         ):
 
             response = self.client.post(
@@ -159,12 +176,27 @@ class DocumentUploadTests(KnowledgeViewTestBase):
 
         document = Document.objects.get(title="HR Policy")
 
-        self.assertTrue(document.is_processed)
+        # The upload returns immediately with the document
+        # pending; the worker owns the later transitions.
 
         self.assertEqual(
-            document.chunks.count(),
-            1,
+            document.status,
+            "pending",
         )
+
+        self.assertFalse(document.is_processed)
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                action="document.uploaded",
+                object_id=str(document.id),
+            ).exists()
+        )
+
+        # Processing is deferred until the upload
+        # transaction commits.
+
+        fake_spawn.assert_called_once_with(document.id)
 
     def test_upload_rejects_bad_extension(self):
 
@@ -223,7 +255,138 @@ class DocumentUploadTests(KnowledgeViewTestBase):
         )
 
 
-class DocumentActionTests(KnowledgeViewTestBase):
+class DocumentProcessingTests(
+    KnowledgeFixtureMixin,
+    TransactionTestCase,
+):
+    """
+    End-to-end processing tests. TransactionTestCase keeps
+    every query in autocommit, so the worker may close and
+    reopen connections exactly as it does in production.
+    """
+
+    def _upload_document(self, title):
+
+        self.client.login(
+            username="orgadmin",
+            password="testpass123",
+        )
+
+        url = reverse(
+            "document-upload",
+            args=[self.assistant.slug],
+        )
+
+        return self.client.post(
+            url,
+            {
+                "title": title,
+                "file": self._upload(),
+            },
+        )
+
+    def _mock_pipeline(self, embed_kwargs):
+
+        return (
+            mock.patch(
+                "knowledge.views._spawn_processing",
+                side_effect=_run_worker_synchronously,
+            ),
+            mock.patch(
+                "knowledge.services.document_processor."
+                "EmbeddingService.embed_texts",
+                **embed_kwargs,
+            ),
+            mock.patch(
+                "knowledge.services.document_processor."
+                "extract_pdf",
+                return_value=[
+                    {
+                        "page": 1,
+                        "text": "Annual leave is 25 days.",
+                    }
+                ],
+            ),
+        )
+
+    def test_upload_processes_document_end_to_end(self):
+
+        embeds, extracts, pdfs = self._mock_pipeline(
+            {"return_value": [[0.1] * 384]},
+        )
+
+        with embeds, extracts, pdfs:
+
+            response = self._upload_document("HR Policy")
+
+        self.assertRedirects(
+            response,
+            reverse("knowledge-home"),
+        )
+
+        document = Document.objects.get(title="HR Policy")
+
+        self.assertEqual(
+            document.status,
+            "processed",
+        )
+
+        self.assertTrue(document.is_processed)
+
+        self.assertEqual(
+            document.chunks.count(),
+            1,
+        )
+
+        # The worker records a completion audit event.
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                action="document.processed",
+                object_id=str(document.id),
+            ).exists()
+        )
+
+    def test_processing_failure_marks_failed_and_audits(self):
+
+        embeds, extracts, pdfs = self._mock_pipeline(
+            {
+                "side_effect": RuntimeError(
+                    "embedding backend down"
+                ),
+            },
+        )
+
+        with embeds, extracts, pdfs:
+
+            self._upload_document("Broken Doc")
+
+        document = Document.objects.get(title="Broken Doc")
+
+        self.assertEqual(
+            document.status,
+            "failed",
+        )
+
+        self.assertFalse(document.is_processed)
+
+        self.assertEqual(
+            document.chunks.count(),
+            0,
+        )
+
+        event = AuditLog.objects.get(
+            action="document.failed",
+            object_id=str(document.id),
+        )
+
+        self.assertIn(
+            "embedding backend down",
+            event.detail["error"],
+        )
+
+
+class DocumentActionTests(KnowledgeFixtureMixin, TestCase):
 
     def _create_document(self):
 
@@ -232,9 +395,10 @@ class DocumentActionTests(KnowledgeViewTestBase):
             title="HR Policy",
             file="knowledge/documents/hr-policy.pdf",
             is_processed=True,
+            status="processed",
         )
 
-    def test_reprocess_runs(self):
+    def test_reprocess_marks_pending_and_audits(self):
 
         document = self._create_document()
 
@@ -249,9 +413,10 @@ class DocumentActionTests(KnowledgeViewTestBase):
         )
 
         with mock.patch(
-            "knowledge.views.process_document",
-            return_value=5,
-        ) as fake_process:
+            "knowledge.views._spawn_processing",
+        ) as fake_spawn, self.captureOnCommitCallbacks(
+            execute=True,
+        ):
 
             response = self.client.post(url)
 
@@ -260,7 +425,137 @@ class DocumentActionTests(KnowledgeViewTestBase):
             reverse("knowledge-home"),
         )
 
-        fake_process.assert_called_once()
+        document.refresh_from_db()
+
+        self.assertEqual(
+            document.status,
+            "pending",
+        )
+
+        fake_spawn.assert_called_once_with(document.id)
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                action="document.reprocess_requested",
+                object_id=str(document.id),
+            ).exists()
+        )
+
+    def test_reprocess_rejects_get_requests(self):
+
+        document = self._create_document()
+
+        self.client.login(
+            username="orgadmin",
+            password="testpass123",
+        )
+
+        url = reverse(
+            "document-reprocess",
+            args=[document.id],
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(
+            response.status_code,
+            405,
+        )
+
+    def test_status_endpoint_returns_payload(self):
+
+        document = self._create_document()
+
+        self.client.login(
+            username="orgadmin",
+            password="testpass123",
+        )
+
+        url = reverse(
+            "document-status",
+            args=[document.id],
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        data = response.json()
+
+        self.assertEqual(
+            data["status"],
+            "processed",
+        )
+
+        self.assertEqual(
+            data["document_id"],
+            document.id,
+        )
+
+        self.assertIn(
+            "chunk_count",
+            data,
+        )
+
+    def test_status_endpoint_hides_foreign_documents(self):
+
+        document = self._create_document()
+
+        other_admin = User.objects.create_user(
+            username="otheradmin",
+            password="testpass123",
+        )
+
+        OrganisationMembership.objects.create(
+            organisation=self.other_organisation,
+            user=other_admin,
+            role="admin",
+            is_active=True,
+        )
+
+        self.client.login(
+            username="otheradmin",
+            password="testpass123",
+        )
+
+        url = reverse(
+            "document-status",
+            args=[document.id],
+        )
+
+        response = self.client.get(url)
+
+        # Org-scoped lookup: foreign documents do not
+        # exist as far as this admin is concerned.
+
+        self.assertEqual(
+            response.status_code,
+            404,
+        )
+
+    def test_status_endpoint_refuses_non_admins(self):
+
+        document = self._create_document()
+
+        self.client.login(
+            username="member",
+            password="testpass123",
+        )
+
+        url = reverse(
+            "document-status",
+            args=[document.id],
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(
+            response.status_code,
+            403,
+        )
 
     def test_other_organisation_admin_cannot_delete(self):
 
@@ -335,20 +630,44 @@ class DocumentActionTests(KnowledgeViewTestBase):
             Document.objects.filter(id=document.id).exists()
         )
 
+        self.assertTrue(
+            AuditLog.objects.filter(
+                action="document.deleted",
+                object_id=str(document.id),
+            ).exists()
+        )
 
-class DocumentFormTests(KnowledgeViewTestBase):
+    def test_delete_rejects_get_requests(self):
+
+        document = self._create_document()
+
+        self.client.login(
+            username="orgadmin",
+            password="testpass123",
+        )
+
+        url = reverse(
+            "document-delete",
+            args=[document.id],
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(
+            response.status_code,
+            405,
+        )
+
+
+class DocumentFormTests(KnowledgeFixtureMixin, TestCase):
 
     def test_rejects_oversized_file(self):
 
-        from django.core.files.uploadedfile import (
-            SimpleUploadedFile,
-        )
-
         from knowledge.forms import MAX_UPLOAD_MB
 
-        big_file = SimpleUploadedFile(
-            "huge.pdf",
+        big_file = ContentFile(
             b"x" * (MAX_UPLOAD_MB * 1024 * 1024 + 1),
+            name="huge.pdf",
         )
 
         form = DocumentUploadForm(

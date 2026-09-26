@@ -153,19 +153,12 @@
 
                                         <td>
 
-                                            {% if document.is_processed %}
-
-                                                <span class="knowledge-status processed">
-                                                    Processed
-                                                </span>
-
-                                            {% else %}
-
-                                                <span class="knowledge-status failed">
-                                                    Not processed
-                                                </span>
-
-                                            {% endif %}
+                                            <span
+                                                class="knowledge-status {{ document.status }}"
+                                                data-status-cell="{{ document.id }}"
+                                            >
+                                                {{ document.get_status_display }}
+                                            </span>
 
                                         </td>
 
@@ -239,6 +232,72 @@
 </div>
 
 <script>
+
+    // Poll the status of pending/processing documents so
+    // background embedding progress is visible without a
+    // manual refresh.
+
+    (function pollDocumentStatuses() {
+
+        const cells = document.querySelectorAll(
+            "[data-status-cell]"
+        );
+
+        // Re-query on every pass: documents that reach a
+        // terminal status drop out of the set, so polling
+        // stops by itself once everything has settled.
+
+        const active = Array.from(cells).filter(cell =>
+            cell.classList.contains("pending") ||
+            cell.classList.contains("processing")
+        );
+
+        if (active.length === 0) {
+            return;
+        }
+
+        active.forEach(cell => {
+
+            const documentId =
+                cell.dataset.statusCell;
+
+            fetch(
+                `/knowledge/documents/${documentId}/status/`
+            )
+                .then(response => response.json())
+                .then(data => {
+
+                    if (data.error) {
+                        return;
+                    }
+
+                    cell.className =
+                        `knowledge-status ${data.status}`;
+
+                    cell.textContent =
+                        data.status === "processed"
+                            ? "Processed"
+                            : data.status === "failed"
+                                ? "Failed"
+                                : data.status === "processing"
+                                    ? "Processing"
+                                    : "Pending";
+                })
+                .catch(() => {
+                    // Network hiccup: retry on the next
+                    // interval.
+                });
+        });
+
+        // Poll again shortly. When no pending/processing
+        // documents remain, the next pass stops the loop.
+
+        setTimeout(
+            pollDocumentStatuses,
+            4000
+        );
+    })();
+
     // Confirm destructive document deletions.
 
     document
