@@ -21,6 +21,11 @@ services:
     branch: main
     autoDeploy: true
 
+    # Render restarts the service automatically when this
+    # endpoint stops answering with HTTP 200.
+
+    healthCheckPath: /health/
+
     buildCommand: "./build.sh"
     startCommand: "gunicorn codimente_ai.wsgi:application --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT"
 

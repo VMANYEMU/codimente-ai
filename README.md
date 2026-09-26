@@ -6,6 +6,10 @@ users and assistants. It is not a chatbot — every answer is
 grounded in the organisation's approved knowledge, with source
 attribution and strict departmental isolation.
 
+> Deploying for a client on their own servers? See
+> **[DEPLOY-ONPREM.md](DEPLOY-ONPREM.md)** — a step-by-step
+> on-premises installation guide.
+
 ## Architecture
 
 ```
@@ -179,6 +183,16 @@ HSTS, secure/CSRF cookies, SSL redirect, `X_FRAME_OPTIONS=DENY`.
 > where the same architecture (web process + worker thread +
 > local disk) runs unchanged on a single server.
 
+### Monitoring the demo
+
+The service exposes an unauthenticated `GET /health/` endpoint:
+`200 {"status": "ok"}` when the application and its database
+are reachable, `503 {"status": "degraded"}` when the database
+cannot be reached. Render's `healthCheckPath` is wired to it
+(failed checks restart the service automatically), and any free
+external monitor (e.g. UptimeRobot) can watch the same URL and
+email you if the demo goes down.
+
 ## What is complete
 
 - AI chat with a real LLM via a provider abstraction
@@ -194,4 +208,5 @@ HSTS, secure/CSRF cookies, SSL redirect, `X_FRAME_OPTIONS=DENY`.
 - Organisation switching with session-scoped active membership
 - Append-only audit log with admin UI
 - Asynchronous document processing with live status polling
+- `/health/` endpoint for uptime monitoring and Render health checks
 - Production deployment configuration for Render

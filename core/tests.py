@@ -1,8 +1,11 @@
+from unittest import mock
+
 from django.contrib.auth.models import AnonymousUser, User
 from django.test import TestCase
 from django.urls import reverse
 
 from ai.models import Assistant, AssistantAccess
+from core import health_views
 from core.models import AuditLog, Organisation, OrganisationMembership
 from core.services import record_audit
 
@@ -566,3 +569,61 @@ class ChatViewTests(TestCase):
             self.membership_b,
             other,
         )
+
+
+class HealthEndpointTests(TestCase):
+
+    def setUp(self):
+
+        # Reset the module-level cache so every test
+        # performs a fresh probe regardless of order.
+
+        health_views._health_state.update(
+            {
+                "checked_at": 0.0,
+                "status": None,
+                "database": None,
+            }
+        )
+
+    def test_health_reports_ok(self):
+
+        response = self.client.get(reverse("health"))
+
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+
+        self.assertEqual(data["status"], "ok")
+
+        self.assertEqual(data["database"], "ok")
+
+    def test_health_reports_degraded_without_database(self):
+
+        with mock.patch(
+            "core.health_views.connection"
+        ) as fake_connection:
+
+            fake_connection.cursor.side_effect = Exception(
+                "database down"
+            )
+
+            response = self.client.get(reverse("health"))
+
+        self.assertEqual(response.status_code, 503)
+
+        self.assertEqual(
+            response.json()["status"],
+            "degraded",
+        )
+
+    def test_health_requires_no_authentication(self):
+
+        # Monitors cannot log in: the endpoint must stay
+        # unauthenticated and leak nothing but status.
+
+        self.client.logout()
+
+        response = self.client.get(reverse("health"))
+
+        self.assertEqual(response.status_code, 200)
