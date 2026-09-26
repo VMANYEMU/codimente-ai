@@ -2,23 +2,12 @@
 # Deploy: create a new "Blueprint" in Render and point it
 # at this repository, or commit this file and Render will
 # detect it when you create services manually.
-
-databases:
-  - name: codimente-ai-db
-    databaseName: codimente_ai
-    user: codimente
-    plan: basic-256mb
-
-    # MUST match the web service region: Render's internal
-    # database hostname only resolves within the same
-    # region. This database already exists in oregon (the
-    # account's other database blocks a second free/256mb
-    # instance), so the web service is pinned here too.
-
-    region: oregon
-    postgresMajorVersion: 17
-    # pgvector is available on Render PostgreSQL by
-    # default; the migration enables the extension.
+#
+# The PostgreSQL database is NOT provisioned here: the
+# account's single free-tier database slot is reserved for
+# another project, so the demo uses an external managed
+# Postgres (Tiger Cloud) whose connection string is pasted
+# into DATABASE_URL manually (sync: false).
 
 services:
   - type: web
@@ -56,14 +45,13 @@ services:
       - key: DEBUG
         value: "False"
 
-      # Blueprint web services do NOT receive DATABASE_URL
-      # automatically: the connection must be declared
-      # explicitly.
+      # External managed Postgres connection string
+      # (Tiger Cloud). Pasted once in the dashboard; the
+      # host is external, so settings.py applies
+      # sslmode=require automatically.
 
       - key: DATABASE_URL
-        fromDatabase:
-          name: codimente-ai-db
-          property: connectionString
+        sync: false
 
       - key: SECRET_KEY
         generateValue: true
