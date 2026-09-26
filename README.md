@@ -9,6 +9,9 @@ attribution and strict departmental isolation.
 > Deploying for a client on their own servers? See
 > **[DEPLOY-ONPREM.md](DEPLOY-ONPREM.md)** — a step-by-step
 > on-premises installation guide.
+>
+> Hosting the public demo on Render (with Tiger Cloud Postgres
+> and Cloudflare DNS)? See **[DEPLOY-HOSTED.md](DEPLOY-HOSTED.md)**.
 
 ## Architecture
 
