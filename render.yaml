@@ -14,7 +14,7 @@ services:
     name: codimente-ai
     runtime: python
     plan: starter
-    region: oregon
+    region: frankfurt
     branch: main
     autoDeploy: true
 
@@ -24,7 +24,15 @@ services:
     healthCheckPath: /health/
 
     buildCommand: "./build.sh"
-    startCommand: "gunicorn codimente_ai.wsgi:application --workers 2 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT"
+
+    # One gunicorn worker (with threads): the embedding
+    # model load puts each worker near a small instance's
+    # memory limit, so scaling out workers is how this
+    # demo runs out of memory. The processing worker runs
+    # in-process and a demo has few concurrent users — a
+    # single worker is the right shape.
+
+    startCommand: "gunicorn codimente_ai.wsgi:application --workers 1 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT"
 
     # Demo-sized persistent disk: uploaded knowledge
     # documents survive deploys and restarts. Demo only —
