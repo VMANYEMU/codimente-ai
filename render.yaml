@@ -11,9 +11,11 @@ databases:
 
     # MUST match the web service region: Render's internal
     # database hostname only resolves within the same
-    # region.
+    # region. This database already exists in oregon (the
+    # account's other database blocks a second free/256mb
+    # instance), so the web service is pinned here too.
 
-    region: frankfurt
+    region: oregon
     postgresMajorVersion: 17
     # pgvector is available on Render PostgreSQL by
     # default; the migration enables the extension.
@@ -23,7 +25,7 @@ services:
     name: codimente-ai
     runtime: python
     plan: starter
-    region: frankfurt
+    region: oregon
     branch: main
     autoDeploy: true
 
