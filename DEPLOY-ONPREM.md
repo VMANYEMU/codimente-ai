@@ -171,6 +171,22 @@ server) and point the settings at it. The provider abstraction
 was designed for exactly this swap — no application code
 changes. Contact Codimente for the on-prem model bundle.
 
+**Embeddings:** by default these also travel to the Hugging
+Face API. For a fully offline install, add the local
+embedding model to the venv and switch backends:
+
+```bash
+venv/bin/pip install sentence-transformers
+```
+
+```
+# .env
+EMBEDDINGS_BACKEND=local
+```
+
+Both backends produce identical 384-dimensional vectors, so
+existing pgvector data stays valid either way.
+
 ## 7. Updating
 
 ```bash

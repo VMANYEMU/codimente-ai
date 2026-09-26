@@ -37,9 +37,11 @@ Organisation
   `HostedProvider` calls the Hugging Face Inference Router
   (GPT-OSS). Swapping in an `OllamaProvider` later requires no
   application changes.
-- **Data** — PostgreSQL + pgvector. Embeddings are generated
-  locally with `sentence-transformers/all-MiniLM-L6-v2`
-  (384 dimensions).
+- **Data** — PostgreSQL + pgvector. Embeddings use
+  `all-MiniLM-L6-v2` (384 dimensions) through the Hugging Face
+  Inference API by default, which keeps the web process small
+  and fast to deploy; on-premises installs can generate them
+  in-process instead with `EMBEDDINGS_BACKEND=local`.
 - **Retrieval** — hybrid semantic (0.75) + keyword (0.25) scoring
   with a relevance threshold, so unrelated questions do not
   receive the mathematically closest chunk.

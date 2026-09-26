@@ -73,6 +73,10 @@ services:
       - key: HF_TOKEN
         sync: false
 
+      # Embeddings go through the Hugging Face Inference
+      # API so the web process never loads torch (the
+      # local ML stack exceeded the instance memory).
+
       - key: AI_MODEL
         sync: false
 
@@ -87,3 +91,6 @@ services:
 
       - key: MEDIA_ROOT
         value: /opt/app/media
+
+      - key: EMBEDDINGS_BACKEND
+        value: "api"
