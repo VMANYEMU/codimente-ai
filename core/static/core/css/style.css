@@ -60,23 +60,44 @@ h1 span {
     justify-content: center;
 }
 
-button {
-    padding: 15px 28px;
+button,
+.button-link {
+    padding: 15px 32px;
     border-radius: 8px;
     font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease,
+                border-color 0.15s ease,
+                transform 0.15s ease,
+                box-shadow 0.15s ease;
 }
 
-.primary {
-    border: none;
+.primary,
+.button-link.primary {
+    border: 1px solid #168cff;
     background: #168cff;
     color: white;
+    box-shadow: 0 10px 28px rgba(22, 140, 255, 0.35);
+}
+
+.primary:hover,
+.button-link.primary:hover {
+    background: #3d9fff;
+    border-color: #3d9fff;
+    transform: translateY(-1px);
 }
 
 .secondary {
     border: 1px solid #54779f;
     background: transparent;
     color: white;
+}
+
+.secondary:hover {
+    border-color: #8fb3d9;
+    background: rgba(84, 119, 159, 0.18);
 }
 
 .privacy {
@@ -88,10 +109,121 @@ button {
     width: 180px;
     max-width: 70%;
     margin-bottom: 30px;
+    padding: 18px 30px;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 16px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
 }
+
 .button-link {
     text-decoration: none;
     display: inline-block;
+}
+
+/* ---------------------------------------------
+   Login page
+--------------------------------------------- */
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    background: rgba(10, 30, 58, 0.75);
+    border: 1px solid #23486f;
+    border-radius: 16px;
+    padding: 40px 36px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.login-card h1 {
+    font-size: 1.45rem;
+    letter-spacing: 1px;
+    margin: 18px 0 8px;
+}
+
+.login-logo {
+    width: 130px;
+    padding: 12px 22px;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 12px;
+}
+
+.login-subtitle {
+    color: #b9c9dc;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 24px;
+}
+
+.login-error {
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid #dc3545;
+    color: #ffb3ba;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    margin-bottom: 18px;
+}
+
+.form-group {
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #8fb3d9;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #2c5378;
+    background: rgba(7, 20, 38, 0.8);
+    color: white;
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #168cff;
+    box-shadow: 0 0 0 3px rgba(22, 140, 255, 0.25);
+}
+
+.login-button {
+    width: 100%;
+    margin-top: 8px;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    background: #168cff;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.login-button:hover {
+    background: #3d9fff;
+}
+
+.login-security {
+    color: #7694b5;
+    font-size: 0.85rem;
+    margin-top: 22px;
+    line-height: 1.5;
 }
 .chat-body {
     margin: 0;
