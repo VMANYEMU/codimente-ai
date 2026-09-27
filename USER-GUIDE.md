@@ -11,8 +11,8 @@ Everything you need to use the platform day to day. Admin tasks
    `https://ai.codimentesystems.com`).
 2. Enter the **username and password** your administrator gave
    you → **Sign In**.
-3. After 20 minutes of inactivity you may be signed out — just
-   sign in again; your conversations are kept.
+3. You stay signed in on that browser until you sign out (or
+   the session expires) — your conversations are always kept.
 
 **Forgot your password?** Administrators create accounts and
 can reset passwords — contact them. (Failed sign-ins are
