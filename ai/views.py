@@ -1,13 +1,27 @@
+from django.core.cache import cache
 from django.db import transaction
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
 from rest_framework.response import Response
 
 from core.services import get_active_membership
 from knowledge.services.retriever import retrieve_knowledge
 
+from integrations.authentication import ApiTokenAuthentication
+
 from .models import Assistant, Conversation, Message
 from .providers.hosted_provider import HostedProvider
+
+
+# Per-user throttle for chat requests. Counted on the shared
+# cache — enough to stop a runaway integration from
+# hammering the AI provider.
+
+CHAT_RATE_LIMIT_PER_MINUTE = 30
 
 
 def get_authorised_assistant(membership, assistant_slug):
@@ -31,6 +45,65 @@ def get_authorised_assistant(membership, assistant_slug):
     )
 
 
+def _membership_for_request(request):
+    """
+    Resolve the acting membership for the request.
+
+    API token requests (request.auth = ApiToken) act inside
+    the token's organisation: the token pins the org, not a
+    session. Browser requests keep the session-based
+    resolution, so switching organisations in the portal
+    keeps working exactly as before.
+    """
+
+    token = getattr(request, "auth", None)
+
+    if token is not None and hasattr(
+        token,
+        "organisation",
+    ):
+
+        return get_active_membership(
+            request,
+            organisation=token.organisation,
+        )
+
+    return get_active_membership(request)
+
+
+def _enforce_chat_rate_limit(request):
+    """
+    Sliding one-minute counter per user on the shared
+    cache. Returns True when the user is over the limit.
+    A broken cache never takes the chat API down.
+    """
+
+    key = "chat-rl:" + str(
+        getattr(request.user, "pk", "anon")
+    )
+
+    try:
+
+        used = cache.get_or_set(key, 0, 60)
+
+        try:
+
+            cache.incr(key)
+
+        except Exception:
+
+            # get_or_set succeeded but the counter is not
+            # incrementable: treat the read value as final.
+
+            pass
+
+        return used >= CHAT_RATE_LIMIT_PER_MINUTE
+
+    except Exception:
+
+        return False
+
+
 @api_view(["POST"])
 def chat_api(request):
 
@@ -48,9 +121,11 @@ def chat_api(request):
 
     # -----------------------------------------
     # 2. Find active organisation membership
+    #    (session for browsers, the token's
+    #    organisation for API tokens)
     # -----------------------------------------
 
-    membership = get_active_membership(request)
+    membership = _membership_for_request(request)
 
     if membership is None:
         return Response(
@@ -151,6 +226,26 @@ def chat_api(request):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+    # -----------------------------------------
+    # 5b. Rate limit chat requests per user
+    #
+    # Checked late so malformed or unauthorised
+    # calls never consume quota.
+    # -----------------------------------------
+
+    if _enforce_chat_rate_limit(request):
+
+        return Response(
+            {
+                "error": (
+                    "Too many questions in a short "
+                    "time. Wait a minute and try "
+                    "again."
+                )
+            },
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
 
     # -----------------------------------------
     # 6. Load PREVIOUS conversation history
@@ -419,7 +514,7 @@ def conversation_list(request):
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
-    membership = get_active_membership(request)
+    membership = _membership_for_request(request)
 
     if membership is None:
         return Response(
@@ -491,7 +586,7 @@ def conversation_detail(request, conversation_id):
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
-    membership = get_active_membership(request)
+    membership = _membership_for_request(request)
 
     if membership is None:
         return Response(
@@ -547,6 +642,83 @@ def conversation_detail(request, conversation_id):
                     "created_at": message.created_at.isoformat(),
                 }
                 for message in messages
+            ],
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["GET"])
+@authentication_classes([ApiTokenAuthentication])
+@permission_classes([])
+def whoami(request):
+    """
+    Credential check for integrators: confirms the token is
+    valid and shows which user, organisation and assistants
+    it can reach. Accepts ONLY a token — sessions are
+    deliberately disabled here so a browser cookie can never
+    be mistaken for an integration credential.
+    """
+
+    if (
+        not request.user.is_authenticated
+        or request.auth is None
+    ):
+
+        return Response(
+            {
+                "error": (
+                    "Provide a valid API token in the "
+                    "Authorization header."
+                )
+            },
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    token = request.auth
+
+    membership = get_active_membership(
+        request,
+        organisation=token.organisation,
+    )
+
+    if membership is None:
+
+        return Response(
+            {
+                "error": (
+                    "The user behind this token has no "
+                    "active membership in the token's "
+                    "organisation."
+                )
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    assistants = (
+        Assistant.objects
+        .filter(
+            organisation=membership.organisation,
+            is_active=True,
+            access_permissions__membership=membership,
+        )
+        .distinct()
+        .order_by("id")
+    )
+
+    return Response(
+        {
+            "user": request.user.username,
+            "organisation": membership.organisation.name,
+            "organisation_id": membership.organisation_id,
+            "token_name": token.name,
+            "token_prefix": token.prefix,
+            "assistants": [
+                {
+                    "slug": assistant.slug,
+                    "name": assistant.name,
+                }
+                for assistant in assistants
             ],
         },
         status=status.HTTP_200_OK,

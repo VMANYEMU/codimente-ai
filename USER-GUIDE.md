@@ -141,6 +141,16 @@ result and deletion — with actor, time and details. Entries are
 **append-only**: nobody can edit or delete history, not even in
 the admin interface.
 
+### Connecting other systems (API)
+
+Other systems — an intranet, HR portal or bot — can ask the
+same assistants through the API. An administrator creates a
+service user, its organisation membership and assistant access,
+then issues an **API token** in `/admin/` → **API tokens** (the
+key is shown once and stored only as a hash; creation and
+revocation appear in the audit log). The full walkthrough for
+integrators is in **[INTEGRATIONS.md](INTEGRATIONS.md)**.
+
 ### Django admin (`/admin/`)
 
 `/admin/` is Django's own administration site — separate from

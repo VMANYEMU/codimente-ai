@@ -4,6 +4,7 @@ from .views import (
     chat_api,
     conversation_detail,
     conversation_list,
+    whoami,
 )
 
 
@@ -12,6 +13,12 @@ urlpatterns = [
         "chat/",
         chat_api,
         name="ai-chat",
+    ),
+
+    path(
+        "whoami/",
+        whoami,
+        name="api-whoami",
     ),
 
     path(

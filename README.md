@@ -15,6 +15,10 @@ attribution and strict departmental isolation.
 >
 > End-user instructions live in **[USER-GUIDE.md](USER-GUIDE.md)** —
 > share it with everyone you onboard.
+>
+> Connecting another system (intranet, HR portal, bot, mobile
+> app) to ask questions through the API? See
+> **[INTEGRATIONS.md](INTEGRATIONS.md)**.
 
 ## Architecture
 

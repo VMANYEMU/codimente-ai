@@ -282,3 +282,28 @@ LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/chat/"
 
 LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+
+# ---------------------------------------------------------
+# DRF: API tokens for external integrations
+#
+# SessionAuthentication stays first so the portal's own
+# chat keeps working unchanged. ApiTokenAuthentication adds
+# the header-based path for external systems.
+# ---------------------------------------------------------
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "integrations.authentication.ApiTokenAuthentication",
+    ],
+}
+
+
+CACHES = {
+    "default": {
+        "BACKEND": (
+            "django.core.cache.backends.locmem.LocMemCache"
+        ),
+    }
+}

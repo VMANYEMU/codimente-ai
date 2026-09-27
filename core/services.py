@@ -57,15 +57,31 @@ def record_audit(
 # Active organisation
 # ---------------------------------------------------------
 
-def get_active_membership(request):
+def get_active_membership(request, organisation=None):
     """
     Return the user's active organisation membership.
 
     Resolution order:
-      1. the membership id stored in the session
+      1. an explicitly given organisation (used by API
+         token requests, which carry their organisation
+         on the token instead of in a session)
+      2. the membership id stored in the session
          (set by core.views.organisation_switch)
-      2. the first active membership
+      3. the first active membership
     """
+
+    if organisation is not None:
+
+        return (
+            OrganisationMembership.objects
+            .filter(
+                user=request.user,
+                organisation=organisation,
+                is_active=True,
+            )
+            .select_related("organisation")
+            .first()
+        )
 
     memberships = (
         OrganisationMembership.objects
