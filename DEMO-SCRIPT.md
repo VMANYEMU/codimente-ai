@@ -114,6 +114,11 @@ Restoration requests are fulfilled within 4 working hours.
 Sign in, then for each assistant: ask, let the answer render,
 **point at the source card** ("Page 1, HR Handbook 2026").
 
+The welcome screen's three numbered steps (pick an assistant →
+ask → verify the source) mirror this exact flow — and the
+suggestion chips under it are live: clicking one sends a real
+question, handy for hands-on client moments.
+
 | Ask (exact wording works well) | The fact it must cite |
 | --- | --- |
 | HR: "How many annual leave days do we get, and what happens if I don't use them?" | 27 days; lapses 31 March unless HR Director approves |
