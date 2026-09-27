@@ -1,6 +1,7 @@
 from unittest import mock
 
 from django.contrib.auth.models import AnonymousUser, User
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
@@ -646,3 +647,126 @@ class RobotsTxtTests(TestCase):
             "Disallow: /",
             response.content.decode(),
         )
+
+
+class PromoteAdminCommandTests(TestCase):
+
+    def setUp(self):
+
+        self.organisation = Organisation.objects.create(
+            name="Codimente Demo Organisation",
+        )
+
+        self.org_admin = User.objects.create_user(
+            username="orgadmin",
+            password="testpass123",
+        )
+
+        self.org_member = User.objects.create_user(
+            username="member",
+            password="testpass123",
+        )
+
+        OrganisationMembership.objects.create(
+            organisation=self.organisation,
+            user=self.org_admin,
+            role="admin",
+            is_active=True,
+        )
+
+        OrganisationMembership.objects.create(
+            organisation=self.organisation,
+            user=self.org_member,
+            role="user",
+            is_active=True,
+        )
+
+    def test_promotes_all_organisation_admins(self):
+
+        call_command("promote_admin")
+
+        self.org_admin.refresh_from_db()
+        self.org_member.refresh_from_db()
+
+        self.assertTrue(self.org_admin.is_staff)
+        self.assertTrue(self.org_admin.is_superuser)
+
+        # Portal members must never gain Django admin.
+
+        self.assertFalse(self.org_member.is_staff)
+        self.assertFalse(self.org_member.is_superuser)
+
+    def test_promotes_named_user_without_membership(self):
+
+        # "guest"-style accounts created ad hoc in the
+        # Django admin have no organisation membership
+        # but can still be promoted by name.
+
+        User.objects.create_user(
+            username="guest",
+            password="testpass123",
+        )
+
+        call_command("promote_admin", "--username", "guest")
+
+        guest = User.objects.get(username="guest")
+
+        self.assertTrue(guest.is_staff)
+        self.assertTrue(guest.is_superuser)
+
+        self.org_admin.refresh_from_db()
+
+        self.assertFalse(self.org_admin.is_staff)
+
+    def test_unknown_user_fails_with_clear_error(self):
+
+        from django.core.management.base import CommandError
+
+        with self.assertRaises(CommandError) as ctx:
+
+            call_command(
+                "promote_admin",
+                "--username",
+                "nobody",
+            )
+
+        self.assertIn(
+            "does not exist",
+            str(ctx.exception),
+        )
+
+    def test_reactivation_and_idempotence(self):
+
+        # A deactivated account is reactivated on promote
+        # (is_active=False also produces 403 on /admin/),
+        # and repeated runs never raise or duplicate.
+
+        self.org_admin.is_staff = True
+        self.org_admin.is_superuser = True
+        self.org_admin.is_active = False
+        self.org_admin.save()
+
+        call_command("promote_admin")
+        call_command("promote_admin")
+
+        self.org_admin.refresh_from_db()
+
+        self.assertTrue(self.org_admin.is_active)
+
+        self.assertEqual(
+            User.objects.filter(is_superuser=True).count(),
+            1,
+        )
+
+    def test_inactive_membership_is_not_promoted(self):
+
+        membership = self.org_admin.organisation_memberships.get()
+
+        membership.is_active = False
+        membership.save()
+
+        call_command("promote_admin")
+
+        self.org_admin.refresh_from_db()
+
+        self.assertFalse(self.org_admin.is_staff)

@@ -21,6 +21,31 @@ credentials.)
 
 ---
 
+## What to do after you sign in
+
+The chat screen shows these steps right on the welcome panel:
+
+1. **Pick an assistant** in the left sidebar — each one answers
+   only from its own approved documents.
+2. **Type your question** at the bottom and press **Enter**.
+3. **Open the Sources** under the answer to verify it against
+   the original document.
+
+Or click one of the example questions (the chips under the
+welcome panel) — it fills the box and sends for you.
+
+**Administrators** also see a tip on the welcome panel: use
+**Manage knowledge** in the sidebar to upload the documents
+your team asks about. The full upload sequence is in the
+administrator section below.
+
+**Looking for `/admin/`?** That is the separate Django
+administration site for user accounts and permissions — see
+the note in the administrator section below. Everyday use
+needs nothing from it.
+
+---
+
 ## Asking questions
 
 1. Pick an assistant in the left sidebar. Each one answers
@@ -118,8 +143,30 @@ the admin interface.
 
 ### Django admin (`/admin/`)
 
-Superusers can manage users, memberships, assistant access and
-view the audit trail. Regular users never need it.
+`/admin/` is Django's own administration site — separate from
+the portal. It manages **users, passwords and Django
+permissions** (things the portal deliberately does not
+expose). Regular users never need it.
+
+> **Getting `403 Forbidden` on `/admin/`?** That is expected
+> without *Django staff status*. There are two unrelated
+> admin layers:
+>
+> | Layer | Grants | Where it is given |
+> | --- | --- | --- |
+> | **Organisation admin** | Manage knowledge, audit log | Portal — memberships (org role "admin") |
+> | **Django admin** | `/admin/` pages | `is_staff` + `is_superuser` on the user |
+>
+> An organisation admin **does not** automatically get
+> `/admin/`, and "Staff status" is a checkbox on the user page
+> in `/admin/` itself (a superuser without it still gets 403).
+>
+> **Fix from the command line** (Render Shell →
+> `python manage.py promote_admin --username guest`), or
+> promote all organisation admins at once with
+> `python manage.py promote_admin`. Users already in `/admin/`
+> can instead tick **Staff status** and **Superuser status**
+> on the user's page and save.
 
 ---
 
@@ -133,3 +180,4 @@ view the audit trail. Regular users never need it.
 | Document **Failed** | Usually a scanned/image-only PDF with no readable text — upload a text-based version |
 | Answer looks wrong or outdated | Open the cited source; if the document is old, upload the newer version and delete the stale one |
 | Page behaves oddly after an update | Hard-refresh with **Ctrl+F5** to fetch the new styles |
+| `/admin/` shows **403 Forbidden** despite a valid login | The account lacks Django staff status (see the admin section above) | An existing superuser ticks **Staff status** on the user, or run `python manage.py promote_admin --username <name>` |

@@ -376,6 +376,38 @@ button,
     line-height: 1.6;
 }
 
+.getting-started {
+    text-align: left;
+    max-width: 520px;
+    margin: 25px auto 0;
+    padding: 18px 22px 18px 40px;
+    background: #0d1d33;
+    border: 1px solid #213955;
+    border-radius: 12px;
+    color: #afc1d5;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.getting-started li {
+    margin: 6px 0;
+}
+
+.getting-started li::marker {
+    color: #4a7fae;
+    font-weight: bold;
+}
+
+.welcome .getting-started-admin {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: #6f8aa6;
+}
+
+.welcome .getting-started-admin strong {
+    color: #9fb6cc;
+}
+
 .suggestions {
     display: flex;
     gap: 10px;

@@ -57,9 +57,11 @@ card, no expiry, 750 MB, pgvector supported.
    takes ~2–3 minutes (previously 10–15 with the ML stack).
 2. `collectstatic` — static files for whitenoise.
 3. `migrate` — creates all tables incl. pgvector fields.
-4. `seed_organisation` — creates the organisation, 5 assistants
-   (human-resources, finance, procurement, ict-support, general), their
-   knowledge bases and the `admin` user.
+4. `seed_organisation --django-admin` — creates the organisation,
+   5 assistants (human-resources, finance, procurement, ict-support,
+   general), their knowledge bases and the `admin` user — with
+   Django `/admin/` access granted (look for
+   `Granted Django admin status to 'admin'.` in the log).
 
 ### Success looks like
 
@@ -149,6 +151,7 @@ Then `https://ai.codimentesystems.com` is the demo URL.
 | 403 on login submit | CSRF origin mismatch | `CSRF_TRUSTED_ORIGINS` must be exactly `https://ai.codimentesystems.com` |
 | `permission denied to create extension vector` | Database without pgvector rights/support | Run `CREATE EXTENSION IF NOT EXISTS vector;` as the Tiger admin user (Part 1, step 3) |
 | Login forgotten | Seeded admin password lost | Delete + re-apply the blueprint with a new `SEED_ADMIN_PASSWORD`, or run `python manage.py changepassword admin` via Render Shell |
+| 403 on `/admin/` with a valid portal login | Django admin needs `is_staff`/`is_superuser` on the user — organisation "admin" rights alone do not grant it (this includes users added via *Add user*, which does not show a Staff status field) | Render Shell → `python manage.py promote_admin --username <name>` (or plain `python manage.py promote_admin` to promote every organisation admin), then sign in again |
 
 ---
 

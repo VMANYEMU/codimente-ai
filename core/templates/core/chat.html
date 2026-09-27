@@ -223,18 +223,56 @@
                     knowledge, documents and connected systems.
                 </p>
 
+                <ol class="getting-started">
+
+                    <li>
+                        Pick an assistant in the left sidebar
+                        — each one answers only from its own
+                        approved documents.
+                    </li>
+
+                    <li>
+                        Type your question below and press
+                        Enter.
+                    </li>
+
+                    <li>
+                        Open the Sources under the answer to
+                        verify it against the original
+                        document.
+                    </li>
+
+                </ol>
+
+                {% if membership.role == "admin" %}
+
+                    <p class="getting-started-admin">
+                        Admin tip: use <strong>Manage
+                        knowledge</strong> in the sidebar to
+                        upload the documents your team asks
+                        about.
+                    </p>
+
+                {% endif %}
+
                 <div class="suggestions">
 
-                    <button>
-                        Search organisational knowledge
+                    <button
+                        data-suggestion="How many annual leave days am I entitled to?"
+                    >
+                        Annual leave entitlement
                     </button>
 
-                    <button>
-                        Summarise a document
+                    <button
+                        data-suggestion="What is our procurement procedure for purchases?"
+                    >
+                        Procurement procedure
                     </button>
 
-                    <button>
-                        Analyse business information
+                    <button
+                        data-suggestion="How do I reset my password?"
+                    >
+                        Password reset
                     </button>
 
                 </div>
@@ -817,6 +855,35 @@ function addConversationToSidebar(
     highlightActiveConversation(conversationDbId);
 }
 
+// ---------------------------------------------
+// Suggestion chips: fill the composer with the
+// chip's question and send it immediately. The
+// listener sits on the conversation container so
+// it also works for the welcome screen rebuilt
+// by "New conversation".
+// ---------------------------------------------
+
+conversation.addEventListener(
+    "click",
+    function(event) {
+
+        const chip = event.target.closest(
+            "[data-suggestion]"
+        );
+
+        if (!chip) {
+            return;
+        }
+
+        event.preventDefault();
+
+        messageInput.value =
+            chip.dataset.suggestion;
+
+        sendMessage();
+    }
+);
+
 function startNewConversation() {
 
     // Forget the current database conversation.
@@ -846,18 +913,56 @@ function startNewConversation() {
                 knowledge, documents and connected systems.
             </p>
 
+            <ol class="getting-started">
+
+                <li>
+                    Pick an assistant in the left sidebar
+                    — each one answers only from its own
+                    approved documents.
+                </li>
+
+                <li>
+                    Type your question below and press
+                    Enter.
+                </li>
+
+                <li>
+                    Open the Sources under the answer to
+                    verify it against the original
+                    document.
+                </li>
+
+            </ol>
+
+            {% if membership.role == "admin" %}
+
+                <p class="getting-started-admin">
+                    Admin tip: use <strong>Manage
+                    knowledge</strong> in the sidebar to
+                    upload the documents your team asks
+                    about.
+                </p>
+
+            {% endif %}
+
             <div class="suggestions">
 
-                <button>
-                    Search organisational knowledge
+                <button
+                    data-suggestion="How many annual leave days am I entitled to?"
+                >
+                    Annual leave entitlement
                 </button>
 
-                <button>
-                    Summarise a document
+                <button
+                    data-suggestion="What is our procurement procedure for purchases?"
+                >
+                    Procurement procedure
                 </button>
 
-                <button>
-                    Analyse business information
+                <button
+                    data-suggestion="How do I reset my password?"
+                >
+                    Password reset
                 </button>
 
             </div>
