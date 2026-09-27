@@ -167,6 +167,16 @@ expose). Regular users never need it.
 > `python manage.py promote_admin`. Users already in `/admin/`
 > can instead tick **Staff status** and **Superuser status**
 > on the user's page and save.
+>
+> **Signed into the portal but `/chat/` itself returns 403?**
+> That is the other gate: portal access needs an organisation
+> membership **and** assistant access rows, and neither is
+> created by adding a user in `/admin/`. Re-running
+> `python manage.py seed_organisation --django-admin
+> --admin-username <name>` wires all of it up idempotently
+> (it never resets the password), or add a membership with
+> role **Administrator** plus **assistant access** entries in
+> `/admin/` by hand.
 
 ---
 

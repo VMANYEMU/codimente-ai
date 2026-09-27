@@ -152,6 +152,7 @@ Then `https://ai.codimentesystems.com` is the demo URL.
 | `permission denied to create extension vector` | Database without pgvector rights/support | Run `CREATE EXTENSION IF NOT EXISTS vector;` as the Tiger admin user (Part 1, step 3) |
 | Login forgotten | Seeded admin password lost | Delete + re-apply the blueprint with a new `SEED_ADMIN_PASSWORD`, or run `python manage.py changepassword admin` via Render Shell |
 | 403 on `/admin/` with a valid portal login | Django admin needs `is_staff`/`is_superuser` on the user — organisation "admin" rights alone do not grant it (this includes users added via *Add user*, which does not show a Staff status field) | Render Shell → `python manage.py promote_admin --username <name>` (or plain `python manage.py promote_admin` to promote every organisation admin), then sign in again |
+| Portal (`/chat/`) returns 403 for a user added via `/admin/` | Portal access needs an organisation membership **and** assistant access rows — adding a user in Django admin creates neither | Render Shell → `python manage.py seed_organisation --django-admin --admin-username <name>` — wires membership + all assistant access idempotently without touching the password |
 
 ---
 

@@ -3,6 +3,7 @@ from unittest import mock
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
+from django.core.management import call_command
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
@@ -678,3 +679,143 @@ class DocumentFormTests(KnowledgeFixtureMixin, TestCase):
         self.assertFalse(form.is_valid())
 
         self.assertIn("file", form.errors)
+
+
+class SeedOrganisationCommandTests(TestCase):
+    """
+    The seeder is the deployment path for portal access:
+    it must be idempotent, never reset passwords, and wire
+    up accounts that were created by hand in the Django
+    admin (membership + assistant access), not just brand
+    new users.
+    """
+
+    def test_seeds_fresh_environment(self):
+
+        call_command(
+            "seed_organisation",
+            "--admin-password",
+            "seedpass123",
+        )
+
+        organisation = Organisation.objects.get(
+            name="Codimente Demo Organisation",
+        )
+
+        self.assertEqual(
+            Assistant.objects.filter(
+                organisation=organisation,
+            ).count(),
+            5,
+        )
+
+        admin = User.objects.get(username="admin")
+
+        membership = OrganisationMembership.objects.get(
+            organisation=organisation,
+            user=admin,
+        )
+
+        self.assertEqual(
+            membership.role,
+            "admin",
+        )
+
+        self.assertEqual(
+            AssistantAccess.objects.filter(
+                membership=membership,
+            ).count(),
+            5,
+        )
+
+    def test_existing_user_is_wired_for_portal_access(self):
+
+        # An account created by hand in the Django admin:
+        # no membership, no assistant access, a password
+        # only its creator knows. Seeding must make it
+        # fully usable without touching the password.
+
+        User.objects.create_user(
+            username="guest",
+            password="original-pass-123",
+        )
+
+        call_command(
+            "seed_organisation",
+            "--admin-username",
+            "guest",
+            "--django-admin",
+        )
+
+        guest = User.objects.get(username="guest")
+
+        organisation = Organisation.objects.get()
+
+        membership = OrganisationMembership.objects.get(
+            user=guest,
+        )
+
+        self.assertEqual(
+            membership.organisation,
+            organisation,
+        )
+
+        self.assertEqual(
+            membership.role,
+            "admin",
+        )
+
+        self.assertEqual(
+            AssistantAccess.objects.filter(
+                membership=membership,
+            ).count(),
+            5,
+        )
+
+        # Django admin status granted, password untouched.
+
+        self.assertTrue(guest.is_staff)
+
+        self.assertTrue(guest.is_superuser)
+
+        self.assertTrue(
+            guest.check_password("original-pass-123"),
+        )
+
+    def test_rerun_is_idempotent(self):
+
+        call_command(
+            "seed_organisation",
+            "--admin-password",
+            "seedpass123",
+        )
+
+        call_command(
+            "seed_organisation",
+            "--admin-password",
+            "other-pass",
+        )
+
+        self.assertEqual(
+            Organisation.objects.count(),
+            1,
+        )
+
+        self.assertEqual(
+            OrganisationMembership.objects.count(),
+            1,
+        )
+
+        self.assertEqual(
+            AssistantAccess.objects.count(),
+            5,
+        )
+
+        admin = User.objects.get(username="admin")
+
+        # The password set on creation survives reruns;
+        # a rerun must never lock the admin out.
+
+        self.assertTrue(
+            admin.check_password("seedpass123"),
+        )

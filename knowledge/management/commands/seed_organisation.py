@@ -13,6 +13,12 @@ The admin username can be overridden with --admin-username
 or the SEED_ADMIN_PASSWORD environment variable; when neither is
 given and the user must be created, a random password is
 generated and printed once.
+
+If the admin user already exists (for example a staff account
+created by hand in the Django admin), it is left untouched
+including its password, but the admin membership and every
+assistant access are (re-)applied for it: portal access comes
+from memberships and access rows, not from Django flags.
 """
 
 import os
@@ -260,27 +266,21 @@ class Command(BaseCommand):
         else:
 
             self.stdout.write(
-                f"User '{admin_username}' already exists."
+                f"User '{admin_username}' already exists; "
+                f"ensuring organisation membership and "
+                f"assistant access."
             )
-
-        if options["django_admin"]:
-
-            if (
-                not admin_user.is_staff
-                or not admin_user.is_superuser
-            ):
-
-                admin_user.is_staff = True
-                admin_user.is_superuser = True
-                admin_user.save()
-
-                self.stdout.write(
-                    f"Granted Django admin status to "
-                    f"'{admin_username}'."
-                )
 
         # ---------------------------------------------
         # 4. Admin membership
+        #
+        # Idempotent and applied to existing users too:
+        # an account created by hand (for example a
+        # superuser added in the Django admin) ends up
+        # fully usable in the portal after the next
+        # seeding run. Portal access comes from the
+        # membership and AssistantAccess rows — Django
+        # superuser status plays no part in it.
         # ---------------------------------------------
 
         membership, membership_created = (
@@ -314,6 +314,26 @@ class Command(BaseCommand):
                 f"Access '{admin_username}' -> "
                 f"{assistant.name}",
             )
+
+        # ---------------------------------------------
+        # 6. Optional Django admin status
+        # ---------------------------------------------
+
+        if options["django_admin"]:
+
+            if (
+                not admin_user.is_staff
+                or not admin_user.is_superuser
+            ):
+
+                admin_user.is_staff = True
+                admin_user.is_superuser = True
+                admin_user.save()
+
+                self.stdout.write(
+                    f"Granted Django admin status to "
+                    f"'{admin_username}'."
+                )
 
         self.stdout.write(
             self.style.SUCCESS(
