@@ -326,10 +326,12 @@ button,
 .private-badge {
     color: #59aaff;
     border: 1px solid #275989;
-    padding: 6px 10px;
+    padding: 6px 14px;
     border-radius: 5px;
     font-size: 0.7rem;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .conversation {
@@ -387,6 +389,12 @@ button,
     color: #afc1d5;
     border: 1px solid #213955;
     font-size: 0.85rem;
+}
+
+.suggestions button:hover {
+    border-color: #2c5378;
+    color: white;
+    background: #12273f;
 }
 
 .composer {
@@ -1466,6 +1474,39 @@ textarea {
 }
 
 .org-switch-link:hover {
+    background: rgba(84, 119, 159, 0.2);
+    color: white;
+}
+
+
+/* ==================================================
+   SIDEBAR ADMIN NAVIGATION
+   ================================================== */
+
+.sidebar-admin-nav {
+    flex-shrink: 0;
+
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #1c304b;
+
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sidebar-admin-link {
+    display: block;
+
+    color: #93a9c4;
+    font-size: 0.9rem;
+    text-decoration: none;
+
+    padding: 9px 12px;
+    border-radius: 8px;
+}
+
+.sidebar-admin-link:hover {
     background: rgba(84, 119, 159, 0.2);
     color: white;
 }

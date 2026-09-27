@@ -105,19 +105,23 @@
 
 			{% if membership.role == "admin" %}
 
-				<a
-					class="new-chat knowledge-back-link"
-					href="{% url 'knowledge-home' %}"
-				>
-					Manage knowledge
-				</a>
+				<div class="sidebar-admin-nav">
 
-				<a
-					class="new-chat knowledge-back-link"
-					href="{% url 'audit-log' %}"
-				>
-					Audit log
-				</a>
+					<a
+						class="sidebar-admin-link"
+						href="{% url 'knowledge-home' %}"
+					>
+						Manage knowledge
+					</a>
+
+					<a
+						class="sidebar-admin-link"
+						href="{% url 'audit-log' %}"
+					>
+						Audit log
+					</a>
+
+				</div>
 
 			{% endif %}
 

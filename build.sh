@@ -20,5 +20,8 @@ python manage.py migrate --noinput
 # bases and an organisation admin. Idempotent: existing
 # data is never overwritten or duplicated. If no password
 # is configured, a random one is generated and printed to
-# the build log once.
-python manage.py seed_organisation --admin-password "${SEED_ADMIN_PASSWORD:-}"
+# the build log once. --django-admin also grants the user
+# Django /admin/ access (idempotent on existing users).
+python manage.py seed_organisation \
+    --django-admin \
+    --admin-password "${SEED_ADMIN_PASSWORD:-}"

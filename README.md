@@ -12,6 +12,9 @@ attribution and strict departmental isolation.
 >
 > Hosting the public demo on Render (with Tiger Cloud Postgres
 > and Cloudflare DNS)? See **[DEPLOY-HOSTED.md](DEPLOY-HOSTED.md)**.
+>
+> End-user instructions live in **[USER-GUIDE.md](USER-GUIDE.md)** —
+> share it with everyone you onboard.
 
 ## Architecture
 
