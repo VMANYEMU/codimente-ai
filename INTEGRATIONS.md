@@ -86,6 +86,28 @@ Copy it immediately into your system's secret store — leaving
 the page is the last time anyone can see it. Creation is
 recorded in the organisation's audit log.
 
+**No admin UI? (headless/automated deployments)** The same
+steps can be done from the server's command line (Render
+Shell, SSH, cron-driven provisioning):
+
+```bash
+# steps 1-3: the service user and its access (if not present)
+python manage.py seed_organisation --django-admin --admin-username svc-intranet
+
+# step 4: issue the token and capture the printed key
+python manage.py issue_api_token \
+    --username svc-intranet \
+    --organisation "Codimente Demo Organisation" \
+    --name "Intranet portal" \
+    --expires-in-days 90
+```
+
+The key is printed exactly once — pipe it straight into your
+secret store. Revoke from the CLI just as easily
+(`revoke_api_token --name "Intranet portal" --organisation
+"Codimente Demo Organisation"`), or untick **Active** in the
+admin.
+
 ### Step 5 — Verify the credential (your first request)
 
 ```bash
@@ -361,6 +383,7 @@ existence of anything the token may not see.
 | See which token is used how | `/admin/` → **API tokens** → `last_used_at` |
 | Revoke a leaked or retired token | `/admin/` → **API tokens** → edit → untick **Active** (deactivation is audited; deletion is disabled so audit history stays intact) |
 | Rotate a token | Deactivate the old one, create a new one, update the secret in your system — both tokens can coexist briefly for a zero-downtime switch |
+| Issue / revoke without the admin UI | `python manage.py issue_api_token …` / `python manage.py revoke_api_token --name … --organisation …` |
 | Change what a token can ask | Grant/revoke **Assistant accesses** for its user — takes effect on the next request |
 | Investigate an integration | **Audit log** (portal) + conversation history under the service user |
 

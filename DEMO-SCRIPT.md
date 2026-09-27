@@ -160,6 +160,21 @@ invent something. Ours refuses. That's the trust story.
 - "Nothing leaves your network except the language model call —
   and for air-gapped clients we swap in a local model. The
   product was designed for that from day one."
+- **The API moment** (lands well with technical clients): any
+  system they own can ask the same assistants with one HTTP
+  call — no SDK, no cookies:
+
+  ```bash
+  curl https://ai.codimentesystems.com/api/v1/chat/ \
+    -H "Authorization: Token codai_..." \
+    -H "Content-Type: application/json" \
+    -d '{"message": "How many annual leave days do we get?",
+         "assistant": "human-resources"}'
+  ```
+
+  The answer arrives grounded, with the same source cards —
+  "this is how your intranet or HR portal embeds Codimente.
+  Full guide: `INTEGRATIONS.md`."
 - Leave-behind: send the client the source cards' titles or a
   screenshot pack after the meeting.
 
