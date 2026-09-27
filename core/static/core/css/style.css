@@ -1249,6 +1249,43 @@ textarea {
     margin: 10px 0;
 }
 
+.upload-steps {
+    margin: 12px 0 0;
+    padding-left: 0;
+    list-style: none;
+    counter-reset: upload-step;
+}
+
+.upload-steps li {
+    counter-increment: upload-step;
+    position: relative;
+    padding: 0 0 14px 44px;
+    color: #b9c9dc;
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.upload-steps li::before {
+    content: counter(upload-step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #168cff;
+    color: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-steps strong {
+    color: white;
+}
+
 .knowledge-main {
     flex-direction: column;
     overflow-y: auto;

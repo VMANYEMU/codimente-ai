@@ -78,11 +78,23 @@ organisation — switching is instantaneous and fully separated.
 
 ### Uploading knowledge (Manage knowledge)
 
+**Quick reference — the upload sequence:**
+
 1. Sidebar → **Manage knowledge** (admins only).
-2. Each assistant has its own knowledge section → **+ Upload
-   document**.
-3. Accepted: **PDF, DOCX, TXT** — up to **20 MB**.
-4. The upload returns immediately with status **Pending**:
+2. Find the assistant's section → **+ Upload document**.
+3. Choose the file (**PDF, DOCX or TXT**, max **20 MB**) and
+   give it a clear title, e.g. *"HR Handbook 2026"* — users
+   see this title in the sources of answers.
+4. Click **Upload and process** → the status badge runs
+   **Pending → Processing → Processed** by itself (a couple of
+   minutes for a large PDF).
+5. **Test it**: ask the assistant a question the document
+   answers — the reply must cite it under **Sources**.
+6. Only when the badge says **Processed** is the document live
+   for users.
+
+The same steps are shown on the upload page itself. More
+detail:
    - **Processing** → the document is being split into chunks
      and embedded (live, no refresh needed)
    - **Processed** → the assistant can now answer from it
