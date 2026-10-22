@@ -8,8 +8,8 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path("admin/", admin.site.urls),
 
-    # Search engines are not welcome on this private
-    # deployment; point them at a blanket disallow.
+    # The public landing page is indexed (the product is for
+    # sale); chat, login and the API stay out of search.
 
     path(
         "robots.txt",
@@ -18,6 +18,14 @@ urlpatterns = [
             content_type="text/plain",
         ),
         name="robots",
+    ),
+    path(
+        "sitemap.xml",
+        TemplateView.as_view(
+            template_name="sitemap.xml",
+            content_type="application/xml",
+        ),
+        name="sitemap",
     ),
 
     # Django authentication

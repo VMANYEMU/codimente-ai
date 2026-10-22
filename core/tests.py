@@ -632,7 +632,7 @@ class HealthEndpointTests(TestCase):
 
 class RobotsTxtTests(TestCase):
 
-    def test_robots_txt_disallows_all_crawlers(self):
+    def test_robots_txt_allows_landing_and_hides_private_areas(self):
 
         response = self.client.get(reverse("robots"))
 
@@ -643,8 +643,20 @@ class RobotsTxtTests(TestCase):
             "text/plain",
         )
 
+        body = response.content.decode()
+
+        self.assertIn("Allow: /", body)
+        self.assertIn("Disallow: /api/", body)
+        self.assertNotIn("Disallow: /", body.splitlines())
+
+    def test_sitemap_lists_landing_page(self):
+
+        response = self.client.get(reverse("sitemap"))
+
+        self.assertEqual(response.status_code, 200)
+
         self.assertIn(
-            "Disallow: /",
+            "https://ai.codimentesystems.com/",
             response.content.decode(),
         )
 
